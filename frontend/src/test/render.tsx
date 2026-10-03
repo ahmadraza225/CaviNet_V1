@@ -1,26 +1,20 @@
-import { vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
 
+import { AuthProvider } from "../auth/AuthProvider";
 import { providerFuture, routerFuture, routes } from "../routes";
 
-/** Renders the real route tree at the given URL with a fresh query client. */
-export function renderRoute(path = "/") {
+/** Renders the real app (auth provider + route tree) at the given URL. */
+export function renderRoute(path = "/", options: { inactivityLimitMs?: number } = {}) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const router = createMemoryRouter(routes, { initialEntries: [path], future: routerFuture });
-  return render(
+  const view = render(
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} future={providerFuture} />
+      <AuthProvider inactivityLimitMs={options.inactivityLimitMs}>
+        <RouterProvider router={router} future={providerFuture} />
+      </AuthProvider>
     </QueryClientProvider>,
   );
-}
-
-export function mockFetchJson(status: number, body: unknown) {
-  return vi.fn().mockResolvedValue(
-    new Response(JSON.stringify(body), {
-      status,
-      headers: { "Content-Type": "application/json" },
-    }),
-  );
+  return { ...view, router };
 }
