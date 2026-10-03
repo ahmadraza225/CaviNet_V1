@@ -131,6 +131,29 @@ jobs:
           status=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" \
             http://localhost:8080/api/admin/users)
           test "$status" = "403"
+      - name: The doctor creates, finds and deletes a patient (FR-02, FR-03, NFR-3)
+        run: |
+          set -a; source .env; set +a
+          api=http://localhost:8080/api
+          token=$(curl -fsS -H "Content-Type: application/json" \
+            -d "{\"email\":\"$DEMO_DOCTOR_EMAIL\",\"password\":\"$DEMO_DOCTOR_PASSWORD\"}" \
+            $api/auth/login | sed 's/.*"access_token":"\([^"]*\)".*/\1/')
+          auth="Authorization: Bearer $token"
+          curl -fsS -H "$auth" -H "Content-Type: application/json" -d '{"full_name":
+            "Ci Testpatient","mr_number":"ci-0001","date_of_birth":"1980-01-01","sex":"male"}' \
+            $api/patients | tee patient.json
+          grep -q '"mr_number":"CI-0001"' patient.json
+          id=$(sed 's/.*"id":"\([^"]*\)".*/\1/' patient.json)
+          curl -fsS -H "$auth" "$api/patients?q=testpatient" | grep -q '"total":1'
+          curl -fsS -H "$auth" $api/dashboard/stats | grep -q '"total_patients":1'
+          code() { curl -s -o /dev/null -w "%{http_code}" "$@"; }
+          test "$(code -X DELETE -H "$auth" "$api/patients/$id")" = "422"
+          test "$(code -X DELETE -H "$auth" "$api/patients/$id?confirm=CI-0001")" = "204"
+          curl -fsS -H "$auth" $api/dashboard/stats | grep -q '"total_patients":0'
+          # The search and the delete confirmation put identifiers in URLs; logs must not keep them.
+          if docker compose logs backend frontend 2>&1 | grep -i -e testpatient -e ci-0001; then
+            echo "Patient identifiers found in the service logs"; exit 1
+          fi
       - name: Show service logs
         if: failure()
         run: docker compose logs

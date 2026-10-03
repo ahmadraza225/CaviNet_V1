@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import type { RecordedCall } from "../../test/api";
@@ -176,7 +176,7 @@ describe("Patient list (FR-03.3)", () => {
     const { router } = renderRoute("/patients");
     await screen.findByText(/No patients yet/);
 
-    await router.navigate("/patients", { state: { notice: "Amina Bibi was deleted." } });
+    await act(() => router.navigate("/patients", { state: { notice: "Amina Bibi was deleted." } }));
     expect(await screen.findByText("Amina Bibi was deleted.")).toBeInTheDocument();
   });
 

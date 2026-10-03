@@ -17,8 +17,9 @@ Final Year Project, Department of Computer Science, Air University Islamabad (20
 | Phase | Content | Status |
 |---|---|---|
 | 1 | Foundation: repository, Docker, CI, app shells | ✅ Done |
-| 2 | Accounts, roles, admin users page and audit log | ✅ This version |
-| 3–7 | Patients, CT upload, AI inference, training toolkit, reports | Planned |
+| 2 | Accounts, roles, admin users page and audit log | ✅ Done |
+| 3 | Patients and the doctor dashboard | ✅ This version |
+| 4–7 | CT upload, AI inference, training toolkit, reports | Planned |
 | 8–12 | Model training on the real dataset, integration, optional extras, final release | Planned |
 
 The full plan, requirements and phase prompts are in the scope document:
@@ -48,6 +49,9 @@ Then open **http://localhost:8080**. The first `make up` downloads and builds ev
   new user must change it at first sign-in. Forgotten passwords are reset the same way (there is
   no email).
 - `make seed` adds a demo doctor (`DEMO_DOCTOR_EMAIL` / `DEMO_DOCTOR_PASSWORD` in `.env`).
+- Doctors land on the **Dashboard** and manage records under **Patients**. Administrators have
+  no access to patient data (they manage accounts and read the audit log).
+- Use made-up patients for demonstrations; never enter real patient data in a test system.
 - Accounts lock for 15 minutes after 5 wrong passwords; the web app signs out after 30 minutes
   without activity, and every session ends after 8 hours.
 
