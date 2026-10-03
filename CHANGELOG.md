@@ -3,6 +3,127 @@
 All notable changes to CaviNet are recorded here, one section per phase.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.5.0] Phase 05: AI inference engine and results
+
+### Added
+- **`cavinet_ml` AI pipeline (M-05).** The worker uses it now, and Phase 6 training will use
+  the same code.
+  - `io.dicom.load_series`: reads the stored series with SimpleITK/GDCM, including
+    JPEG-Lossless compressed scans, in Hounsfield units, sorted by slice position and oriented
+    LPS. A damaged slice is an error, not silently skipped.
+  - `preprocessing` (section 11.1):
+    - clip below -1024 HU;
+    - lung mask with lungmask R231, falling back to the body outline (with a warning) when it
+      finds no lungs or less than 500 mL;
+    - resample to 1.5 mm isotropic (linear for the image, nearest neighbour for the mask);
+    - crop to the lung box plus 10 mm;
+    - lung window -1350 to 150 HU scaled to 0–1;
+    - trilinear resize to 128 × 128 × 128, stored as float16.
+
+    Each step is a separate, tested function, and the settings are stored in the model bundle.
+  - `model` (section 11.2): MONAI 3D ResNet-18 with one input channel, dropout 0.3 and one
+    logit. Bundles follow section 11.6:
+    - float16 weights for every fold, temperature, threshold, confidence bands, preprocessing,
+      label map, metrics, git commit and `is_demo`;
+    - written atomically and loaded with `torch.load(weights_only=True)`;
+    - files that are not valid bundles are refused.
+  - `inference` (section 11.5):
+    - the fold logits are averaged, then divided by the temperature and passed through a
+      sigmoid;
+    - TB if p ≥ 0.50;
+    - confidence is p for TB and 1 − p for NTM, rounded to 0.1% before the band is chosen;
+    - bands: High from 80.0%, Moderate from 65.0%, otherwise Low ("Inconclusive");
+    - each result gets a plain-language explanation;
+    - temperature fitting is also included, for Phase 6.
+  - `previews`: 48 evenly spaced axial slices over the lungs, head to feet, plus 3
+    representative slices, as lung-window PNGs at most 512 px wide (FR-05.3).
+  - `demo`: synthetic volumes (TB-like upper-lobe cavities, NTM-like scattered nodules) and
+    `build_demo_bundle`, which trains a small 5-fold ResNet-18 in about a minute on CPU and
+    marks the bundle `is_demo = true` (FR-05.6).
+  - `cavinet-ml fetch-model` downloads `MODEL_URL` (checking `MODEL_SHA256` when set) and keeps
+    a valid installed model. With no URL, or if the download fails, it builds the demo bundle.
+    `model_card.json` is written beside the bundle.
+- **Worker (FR-04.6, FR-05.1 to FR-05.5).**
+  - The Phase 4 stub is gone: the worker preprocesses the scan, writes the previews and runs
+    the ensemble.
+  - It records:
+    - model name and version;
+    - probability and confidence;
+    - total processing time and time per step;
+    - lung volume;
+    - warnings, such as the fallback crop.
+  - Failures:
+    - a scan that cannot be read fails at once with the reason;
+    - an unexpected error is retried once, then the case fails with a clear message;
+    - no installed model, or an unreadable one, fails the case and says what to do.
+  - On start-up the worker resumes an analysis that a restart interrupted, once.
+  - The model is loaded once per worker process, and the lungmask R231 weights are part of the
+    Docker image, checked by SHA-256 at build time and never downloaded at runtime.
+- **Results (M-06, FR-06.1 to FR-06.4).**
+  - `GET /api/cases/{id}/result` returns:
+    - predicted class, probability of TB, confidence and band, explanation;
+    - the disclaimer "Decision support only. Not a diagnosis. Confirm with laboratory tests.";
+    - validated performance (test AUC, sensitivity, specificity) from the model card;
+    - the model, warnings and timings.
+  - `GET /api/cases/{id}/previews/{index}` serves the slice images. Both endpoints are
+    doctor-only.
+  - The case page shows all of this, with a slice viewer (slider plus Up/Down buttons).
+- **Demo model banner (FR-05.6, NFR-9).**
+  - "DEMO MODEL: NOT FOR CLINICAL USE" appears on every screen while the installed model is the
+    demo, on the result itself, and as a **Demo** badge next to demo results on the dashboard
+    and patient pages.
+  - When no model is installed, every screen says so.
+  - `GET /api/model/status` serves this to any signed-in user.
+- **Admin model page (FR-09.4).** **Model** in the admin menu shows:
+  - name, version, training date, demo or trained;
+  - locked-test and cross-validation metrics;
+  - temperature, threshold and bands;
+  - preprocessing settings;
+  - file name, size and SHA-256.
+
+  Served by `GET /api/admin/model`.
+- **Audit (FR-09.2):** opening a result records `result_viewed`, with the case id only.
+- `make fetch-model` installs the model into `models/` (run automatically by `make up` when
+  no model is installed; `FORCE=1` replaces it). `make benchmark` times the analysis of a
+  synthetic 300-slice scan in the running worker.
+- Alembic migration `0005` (result columns on cases).
+- **CI:**
+  - The ml job runs the real lungmask test with the cached R231 weights.
+  - The full-stack job checks that a synthetic upload completes with a TB/NTM result, the demo
+    flag and banner, and 48 previews.
+  - It also times a 300-slice scan on the CI CPU.
+
+### Changed
+- Synthetic scans now have lungs that shrink towards both ends, like a real chest, so
+  lungmask finds them.
+- The backend image installs CPU-only PyTorch (`TORCH_INDEX_URL` can point elsewhere when the
+  PyTorch index is unreachable).
+- nginx looks the backend up through Docker's DNS on every request (cached 10 s). Before, after
+  an update that recreated only the backend container, the web app answered "502 Bad Gateway"
+  until the frontend was restarted too.
+- Version 0.5.0.
+
+### Removed
+- The Phase 4 stub analyser and `STUB_STEP_SECONDS`. Cases analysed by the stub keep their
+  "STUB" label and are shown as placeholders.
+
+### Notes
+- **Deviation from section 11.1, step 3:** lungmask takes about 0.75 s per slice on CPU, so
+  on thin-slice scans it segments slices at most 3 mm apart, and each skipped slice uses the
+  mask of the nearest segmented slice (`lungmask_max_slice_gap_mm`, stored in the bundle).
+  This keeps a 300-slice scan within the 3-minute target (NFR-1). Training in Phase 6 uses
+  the same setting, so training and inference stay identical.
+- **NFR-1 timing:** a synthetic 300-slice 512 × 512 scan took 75 s on the development CPU,
+  using real lungmask and the demo model. Lung masking was 73 s; a full-size 5-fold ensemble
+  adds about 2 s. The CI run times are in the Phase 5 pull request.
+
+### Upgrade notes
+- Run `make up`. It rebuilds the images (the AI libraries make the first build take several
+  minutes), installs the demo model into `models/` if no model is there, and applies migration
+  `0005`. `STUB_STEP_SECONDS` can be removed from `.env`. To install a released model, set
+  `MODEL_URL` (and `MODEL_SHA256`) in `.env`, then run `make fetch-model FORCE=1` and
+  `make up`.
+
 ## [0.4.0] Phase 04: CT upload, de-identification and case workflow
 
 ### Added
