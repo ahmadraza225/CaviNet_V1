@@ -46,7 +46,7 @@ seed: ## Create the demo doctor account (DEMO_DOCTOR_EMAIL / DEMO_DOCTOR_PASSWOR
 
 demo-scan: ## Write synthetic test CT scans (no real patient) to demo-data/ for trying uploads
 	@mkdir -p demo-data
-	$(COMPOSE) exec -T backend python -m app.synthetic_dicom > demo-data/synthetic_chest_ct.zip
+	$(COMPOSE) exec -T backend python -m app.synthetic_dicom --size 512 > demo-data/synthetic_chest_ct.zip
 	$(COMPOSE) exec -T backend python -m app.synthetic_dicom --slices 30 > demo-data/synthetic_too_few_slices.zip
 	@echo "Wrote demo-data/synthetic_chest_ct.zip (accepted) and"
 	@echo "      demo-data/synthetic_too_few_slices.zip (rejected: fewer than 50 slices)."
