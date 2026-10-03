@@ -154,6 +154,53 @@ jobs:
           if docker compose logs backend frontend 2>&1 | grep -i -e testpatient -e ci-0001; then
             echo "Patient identifiers found in the service logs"; exit 1
           fi
+      - name: The doctor uploads a synthetic scan and the stub analysis completes (FR-04, FR-08)
+        run: |
+          set -a; source .env; set +a
+          api=http://localhost:8080/api
+          tmp=$(mktemp -d)
+          field() { python3 -c "import json, sys; print(json.load(sys.stdin)$1)"; }
+          token=$(curl -fsS -H "Content-Type: application/json" \
+            -d "{\"email\":\"$DEMO_DOCTOR_EMAIL\",\"password\":\"$DEMO_DOCTOR_PASSWORD\"}" \
+            $api/auth/login | field '["access_token"]')
+          auth="Authorization: Bearer $token"
+          patient=$(curl -fsS -H "$auth" -H "Content-Type: application/json" -d '{"full_name":
+            "Ci Scanpatient","mr_number":"CI-0002","date_of_birth":"1970-01-01","sex":"female"}' \
+            $api/patients | field '["id"]')
+          docker compose exec -T backend python -m app.synthetic_dicom --slices 60 --size 64 \
+            > "$tmp/scan.zip"
+          curl -fsS -H "$auth" -F "files=@$tmp/scan.zip;type=application/zip" \
+            "$api/patients/$patient/cases" > "$tmp/case.json"
+          test "$(field '["status"]' < "$tmp/case.json")" = queued
+          case_id=$(field '["id"]' < "$tmp/case.json")
+          for _ in $(seq 1 45); do
+            status=$(curl -fsS -H "$auth" "$api/cases/$case_id" | field '["status"]')
+            [ "$status" = completed ] && break
+            sleep 2
+          done
+          echo "final status: $status"
+          curl -fsS -H "$auth" "$api/cases/$case_id" | tee "$tmp/done.json"
+          test "$status" = completed
+          test "$(field '["result"]["label"]' < "$tmp/done.json")" = STUB
+          curl -fsS -H "$auth" $api/notifications/unread-count | grep -q '"count":1'
+          curl -fsS -H "$auth" $api/dashboard/stats | grep -q '"completed_cases":1'
+          # A scan with too few slices is refused with the documented reason.
+          docker compose exec -T backend python -m app.synthetic_dicom --slices 30 --size 32 \
+            > "$tmp/short.zip"
+          curl -fsS -H "$auth" -F "files=@$tmp/short.zip" "$api/patients/$patient/cases" \
+            | grep -q 'at least 50 are needed'
+          # Stored files are de-identified and no staged original is left behind.
+          docker compose exec -T backend sh -c \
+            '! grep -rlF "SYNTHETIC^TESTPATIENT" /data/cases && [ -z "$(ls -A /data/staging)" ]'
+          if docker compose logs backend worker frontend 2>&1 \
+              | grep -i -e scanpatient -e ci-0002 -e testpatient; then
+            echo "Patient identifiers found in the service logs"; exit 1
+          fi
+          # Deleting the patient removes the stored scan.
+          code=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE -H "$auth" \
+            "$api/patients/$patient?confirm=CI-0002")
+          test "$code" = 204
+          docker compose exec -T backend sh -c "[ ! -e /data/cases/$case_id ]"
       - name: Show service logs
         if: failure()
         run: docker compose logs
