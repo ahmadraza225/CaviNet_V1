@@ -52,7 +52,8 @@ demo-scan: ## Write synthetic test CT scans (no real patient) to demo-data/ for 
 	@echo "      demo-data/synthetic_too_few_slices.zip (rejected: fewer than 50 slices)."
 
 fetch-model: ## Download the model named by MODEL_URL in .env, or build the demo model
-	$(COMPOSE) run --rm --no-deps --user "$$(id -u):$$(id -g)" -e HOME=/tmp worker \
+	$(COMPOSE) run --rm --no-deps --user "$$(id -u):$$(id -g)" -e HOME=/tmp \
+	  -e CAVINET_GIT_COMMIT="$$(git rev-parse --short HEAD 2>/dev/null || echo unknown)" worker \
 	  cavinet-ml fetch-model --out /models/cavinet_model.pth $(if $(FORCE),--force,)
 	@echo "The worker picks up a new model file automatically for the next scan."
 
