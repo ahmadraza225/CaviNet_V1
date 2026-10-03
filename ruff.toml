@@ -1,0 +1,13 @@
+line-length = 100
+target-version = "py311"
+# scripts/audit_tianjin.py is the standalone Kaggle audit script, kept exactly as published.
+extend-exclude = ["frontend", "docs/scope/source", "scripts/audit_tianjin.py"]
+
+[lint]
+select = ["E", "F", "W", "I", "B", "UP", "BLE"]
+
+[lint.isort]
+known-first-party = ["app", "cavinet_ml"]
+
+[lint.per-file-ignores]
+"backend/alembic/versions/*" = ["E501"]
