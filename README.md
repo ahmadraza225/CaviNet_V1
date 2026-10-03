@@ -51,6 +51,11 @@ Then open **http://localhost:8080**.
 The first `make up` downloads and builds everything, including the AI libraries, and trains
 the small demo model. This takes several minutes; later starts take seconds.
 
+The repository is private. If `git clone` asks for a password, the easiest route is
+[GitHub Desktop](https://desktop.github.com/): sign in, choose **Clone repository**, pick
+`CaviNet_V1`, then run `make up` in a terminal opened in that folder. Later, **Fetch origin**
+then **Pull** in GitHub Desktop gets new versions; run `make up` again after each update.
+
 ### Signing in
 
 - The first `make up` creates `.env` with random secrets and prints the **first administrator's
