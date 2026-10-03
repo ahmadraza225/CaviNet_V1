@@ -5,6 +5,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { getDashboardStats, getRecentCases, type DashboardStats } from "../api/dashboard";
 import { useAuth } from "../auth/context";
 import { SystemStatus } from "../components/SystemStatus";
+import { ResultLabel } from "../components/ResultLabel";
 import { StatusBadge } from "../components/StatusBadge";
 import { Alert, Button } from "../components/ui";
 import { UploadCtButton } from "../components/UploadCtButton";
@@ -107,7 +108,9 @@ function RecentCases() {
                   <td className="px-3 py-2">
                     <StatusBadge status={item.status} />
                   </td>
-                  <td className="px-3 py-2">{item.result ?? "—"}</td>
+                  <td className="px-3 py-2">
+                    <ResultLabel result={item.result} isDemo={item.result_is_demo} />
+                  </td>
                   <td className="px-3 py-2 text-right">
                     <Link
                       to={`/cases/${item.case_id}`}

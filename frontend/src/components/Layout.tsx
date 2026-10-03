@@ -2,6 +2,7 @@ import { NavLink, Outlet } from "react-router-dom";
 
 import { useAuth } from "../auth/context";
 import { DISCLAIMER, NAV_ITEMS, ROLE_LABELS } from "../navigation";
+import { DemoBanner } from "./DemoBanner";
 import { NotificationBell } from "./NotificationBell";
 
 export function Layout() {
@@ -59,6 +60,7 @@ export function Layout() {
           )}
         </div>
       </header>
+      {showNav && <DemoBanner />}
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
         <Outlet />

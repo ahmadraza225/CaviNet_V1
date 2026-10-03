@@ -4,6 +4,7 @@ import { Link, useLocation, useParams } from "react-router-dom";
 
 import { getCase, type CaseDetail, type TimelineEntry } from "../../api/cases";
 import { formatBytes, isFinal, STATUS_LABELS, STATUS_STEPS } from "../../caseStatus";
+import { AiResultCard } from "../../components/AiResultCard";
 import { StatusBadge } from "../../components/StatusBadge";
 import { Alert } from "../../components/ui";
 import { formatDate, formatDateTime } from "../../format";
@@ -132,6 +133,7 @@ function ScanDetailsCard({ detail }: { detail: CaseDetail }) {
 function ResultCard({ detail }: { detail: CaseDetail }) {
   if (detail.status !== "completed" || !detail.result) return null;
   const { result } = detail;
+  if (!result.is_stub) return <AiResultCard caseId={detail.id} />;
   return (
     <section aria-labelledby="result-title" className="rounded-lg bg-white p-6 shadow-sm">
       <h2 id="result-title" className="text-lg font-semibold text-slate-800">
@@ -142,8 +144,8 @@ function ResultCard({ detail }: { detail: CaseDetail }) {
           <Alert tone="warning">
             <p className="font-semibold">STUB RESULT: PLACEHOLDER ONLY</p>
             <p className="mt-1">
-              {result.note} The AI model is added in a later phase. Nothing here is a finding about
-              this patient.
+              {result.note} This case was analysed before the AI model was added. Nothing here is a
+              finding about this patient.
             </p>
           </Alert>
         </div>

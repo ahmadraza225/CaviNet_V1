@@ -57,8 +57,20 @@ describe("Patient detail page (FR-03.2, FR-03.4)", () => {
       "GET /api/patients/p-1": {
         body: makePatient({
           scans: [
-            { id: "c-2", uploaded_at: "2026-10-03T09:00:00Z", status: "failed", result: null },
-            { id: "c-1", uploaded_at: "2026-10-03T08:00:00Z", status: "completed", result: "STUB" },
+            {
+              id: "c-2",
+              uploaded_at: "2026-10-03T09:00:00Z",
+              status: "failed",
+              result: null,
+              result_is_demo: false,
+            },
+            {
+              id: "c-1",
+              uploaded_at: "2026-10-03T08:00:00Z",
+              status: "completed",
+              result: "TB",
+              result_is_demo: true,
+            },
           ],
         }),
       },
@@ -70,7 +82,13 @@ describe("Patient detail page (FR-03.2, FR-03.4)", () => {
     expect(rows).toHaveLength(3);
     expect(within(rows[1]).getByText("Failed")).toBeInTheDocument();
     expect(within(rows[2]).getByText("Completed")).toBeInTheDocument();
-    expect(within(rows[2]).getByText("STUB")).toBeInTheDocument();
+    expect(within(rows[2]).getByText("TB")).toBeInTheDocument();
+    // FR-05.6: a result from the demo model is flagged wherever it appears.
+    expect(within(rows[2]).getByText("Demo")).toHaveAttribute(
+      "title",
+      "DEMO MODEL: NOT FOR CLINICAL USE",
+    );
+    expect(within(rows[1]).queryByText("Demo")).not.toBeInTheDocument();
     expect(within(rows[2]).getByRole("link", { name: /Open the case/ })).toHaveAttribute(
       "href",
       "/cases/c-1",
