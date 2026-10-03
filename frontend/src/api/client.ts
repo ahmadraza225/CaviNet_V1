@@ -55,18 +55,19 @@ export function onSessionExpired(handler: (() => void) | null): void {
   sessionExpiredHandler = handler;
 }
 
-async function toApiError(response: Response): Promise<ApiError> {
-  let message = `Request failed (HTTP ${response.status}).`;
+/** Turn an error response body ({detail, code} or FastAPI validation errors) into an ApiError. */
+export function apiErrorFromBody(status: number, body: unknown): ApiError {
+  let message = `Request failed (HTTP ${status}).`;
   let code: string | undefined;
   const fields: Record<string, string> = {};
-  try {
-    const body = await response.json();
-    code = typeof body.code === "string" ? body.code : undefined;
-    if (typeof body.detail === "string") {
-      message = body.detail;
-    } else if (Array.isArray(body.detail) && body.detail.length > 0) {
+  if (body && typeof body === "object") {
+    const { detail, code: bodyCode } = body as { detail?: unknown; code?: unknown };
+    code = typeof bodyCode === "string" ? bodyCode : undefined;
+    if (typeof detail === "string") {
+      message = detail;
+    } else if (Array.isArray(detail) && detail.length > 0) {
       // FastAPI validation errors: [{ loc: ["body", "<field>"], msg, type }, ...]
-      const items = body.detail as { loc?: unknown[]; msg?: string }[];
+      const items = detail as { loc?: unknown[]; msg?: string }[];
       const messages = items.map((item) => String(item.msg ?? "").replace(/^Value error, /, ""));
       items.forEach((item, index) => {
         const loc = Array.isArray(item.loc) ? item.loc : [];
@@ -76,10 +77,18 @@ async function toApiError(response: Response): Promise<ApiError> {
       });
       message = messages.join(" ");
     }
+  }
+  return new ApiError(status, message, code, fields);
+}
+
+async function toApiError(response: Response): Promise<ApiError> {
+  let body: unknown = null;
+  try {
+    body = await response.json();
   } catch {
     // Non-JSON error body: keep the generic message.
   }
-  return new ApiError(response.status, message, code, fields);
+  return apiErrorFromBody(response.status, body);
 }
 
 /** Exchange the refresh cookie for a new access token. Concurrent callers share one request. */

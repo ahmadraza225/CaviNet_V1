@@ -4,9 +4,6 @@ export const DISCLAIMER = "Decision support only. Not a diagnosis. Confirm with 
 
 type Role = UserSummary["role"];
 
-/** Tooltip for features that arrive in a later phase (e.g. Upload CT before Phase 4). */
-export const LATER_PHASE = "Available in a later phase";
-
 /** Role-based navigation (section 9.3). Admins have no access to patient data. */
 export const NAV_ITEMS: { to: string; label: string; roles: Role[] }[] = [
   { to: "/", label: "Dashboard", roles: ["doctor"] },
