@@ -50,6 +50,8 @@ export const getCase = (id: string) => apiFetch<CaseDetail>(`/api/cases/${id}`);
 export const NETWORK_ERROR =
   "The upload failed because the connection was lost. Check the connection and try again.";
 export const UPLOAD_CANCELLED = "Upload cancelled.";
+export const TOO_LARGE =
+  "The upload is larger than the 1.5 GB limit. Upload only the chest CT series, or compress it as a .zip.";
 
 interface XhrResult {
   status: number;
@@ -105,6 +107,10 @@ export async function uploadScan(
   let result = await send(url, files, onProgress, signal);
   if (result.status === 401 && (await refreshSession())) {
     result = await send(url, files, onProgress, signal);
+  }
+  if (result.status === 413 && result.body === null) {
+    // nginx's own refusal (an HTML page) when the body is over its limit.
+    throw new ApiError(413, TOO_LARGE, "upload_too_large");
   }
   if (result.status < 200 || result.status >= 300) {
     throw apiErrorFromBody(result.status, result.body);

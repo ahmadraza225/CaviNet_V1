@@ -13,7 +13,7 @@ HEALTH_URL := http://localhost:$(CAVINET_HTTP_PORT)/api/health
 .DEFAULT_GOAL := help
 
 .PHONY: help env up down logs ps install test test-backend test-ml test-frontend \
-        lint lint-python lint-frontend format seed fetch-model backup restore
+        lint lint-python lint-frontend format seed demo-scan fetch-model backup restore
 
 help: ## Show this list of commands
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | \
@@ -40,6 +40,13 @@ ps: ## Show service status
 
 seed: ## Create the demo doctor account (DEMO_DOCTOR_EMAIL / DEMO_DOCTOR_PASSWORD in .env)
 	$(COMPOSE) exec backend python -m app.seed
+
+demo-scan: ## Write synthetic test CT scans (no real patient) to demo-data/ for trying uploads
+	@mkdir -p demo-data
+	$(COMPOSE) exec -T backend python -m app.synthetic_dicom > demo-data/synthetic_chest_ct.zip
+	$(COMPOSE) exec -T backend python -m app.synthetic_dicom --slices 30 > demo-data/synthetic_too_few_slices.zip
+	@echo "Wrote demo-data/synthetic_chest_ct.zip (accepted) and"
+	@echo "      demo-data/synthetic_too_few_slices.zip (rejected: fewer than 50 slices)."
 
 fetch-model: ## Download the trained model (stub until Phase 5)
 	@echo "fetch-model: not available yet. Phase 5 adds model download and the demo model."
