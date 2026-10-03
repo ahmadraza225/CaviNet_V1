@@ -13,11 +13,13 @@ export const ACTION_LABELS: Record<string, string> = {
   patient_created: "Patient created",
   patient_updated: "Patient edited",
   patient_deleted: "Patient deleted",
+  scan_uploaded: "Scan uploaded",
 };
 
 export const actionLabel = (action: string) => ACTION_LABELS[action] ?? action;
 
-/** Audit entries name patients by record id only (NFR-3); admins never see patient identity. */
+/** Audit entries name patients and cases by record id only (NFR-3); admins never see
+ * patient identity. */
 export function targetLabel(entry: {
   target_type: string | null;
   target_id: string | null;
@@ -25,6 +27,9 @@ export function targetLabel(entry: {
 }): string {
   if (entry.target_type === "patient" && entry.target_id) {
     return `Patient record ${entry.target_id.slice(0, 8)}`;
+  }
+  if (entry.target_type === "case" && entry.target_id) {
+    return `Case ${entry.target_id.slice(0, 8)}`;
   }
   return String(entry.details?.target_email ?? "—");
 }

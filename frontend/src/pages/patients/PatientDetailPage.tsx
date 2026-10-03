@@ -4,10 +4,14 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 
 import { ApiError } from "../../api/client";
 import { deletePatient, getPatient, type PatientDetail } from "../../api/patients";
+import { StatusBadge } from "../../components/StatusBadge";
 import { Alert, Button } from "../../components/ui";
 import { UploadCtButton } from "../../components/UploadCtButton";
+import { isFinal } from "../../caseStatus";
 import { formatDate, formatDateTime, SEX_LABELS } from "../../format";
 import { normalizeMrNumber } from "./patientForm";
+
+const SCANS_POLL_MS = 5_000;
 
 /** FR-03.2: permanent delete, confirmed by typing the patient's MR number. */
 function DeleteDialog({ patient, onCancel }: { patient: PatientDetail; onCancel: () => void }) {
@@ -103,7 +107,7 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-/** FR-03.4: the patient's scans with date, status and result. Scans arrive in Phase 4. */
+/** FR-03.4: the patient's scans with date, status and result, newest first. */
 function ScanHistory({ patient }: { patient: PatientDetail }) {
   return (
     <section aria-labelledby="scans-title" className="rounded-lg bg-white p-6 shadow-sm">
@@ -111,7 +115,7 @@ function ScanHistory({ patient }: { patient: PatientDetail }) {
         <h2 id="scans-title" className="text-lg font-semibold text-slate-800">
           Scans
         </h2>
-        <UploadCtButton />
+        <UploadCtButton patientId={patient.id} />
       </div>
       {patient.scans.length === 0 ? (
         <p className="mt-4 text-sm text-slate-500">No scans have been uploaded for this patient.</p>
@@ -122,14 +126,28 @@ function ScanHistory({ patient }: { patient: PatientDetail }) {
               <th className="px-3 py-2">Uploaded</th>
               <th className="px-3 py-2">Status</th>
               <th className="px-3 py-2">Result</th>
+              <th className="px-3 py-2">
+                <span className="sr-only">Open</span>
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {patient.scans.map((scan) => (
               <tr key={scan.id}>
                 <td className="px-3 py-2">{formatDateTime(scan.uploaded_at)}</td>
-                <td className="px-3 py-2">{scan.status}</td>
+                <td className="px-3 py-2">
+                  <StatusBadge status={scan.status} />
+                </td>
                 <td className="px-3 py-2">{scan.result ?? "—"}</td>
+                <td className="px-3 py-2 text-right">
+                  <Link
+                    to={`/cases/${scan.id}`}
+                    aria-label={`Open the case uploaded ${formatDateTime(scan.uploaded_at)}`}
+                    className="text-brand-700 underline"
+                  >
+                    Open case
+                  </Link>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -146,6 +164,9 @@ export function PatientDetailPage() {
   const patient = useQuery({
     queryKey: ["patient", patientId],
     queryFn: () => getPatient(patientId!),
+    // Keep scan statuses current while any scan is still being processed.
+    refetchInterval: (query) =>
+      query.state.data?.scans.some((scan) => !isFinal(scan.status)) ? SCANS_POLL_MS : false,
   });
 
   if (patient.isError) {
