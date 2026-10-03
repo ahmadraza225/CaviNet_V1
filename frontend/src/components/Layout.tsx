@@ -2,6 +2,7 @@ import { NavLink, Outlet } from "react-router-dom";
 
 import { useAuth } from "../auth/context";
 import { DISCLAIMER, NAV_ITEMS, ROLE_LABELS } from "../navigation";
+import { NotificationBell } from "./NotificationBell";
 
 export function Layout() {
   const { user, signOut } = useAuth();
@@ -35,6 +36,7 @@ export function Layout() {
           </div>
           {user && (
             <div className="flex items-center gap-4 text-sm">
+              {showNav && user.role === "doctor" && <NotificationBell />}
               <span>
                 <span className="font-medium">{user.full_name}</span>{" "}
                 <span className="rounded bg-brand-800 px-2 py-0.5 text-xs">

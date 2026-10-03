@@ -5,12 +5,14 @@ import { Layout } from "./components/Layout";
 import { AuditLogPage } from "./pages/admin/AuditLogPage";
 import { UsersPage } from "./pages/admin/UsersPage";
 import { ChangePasswordPage } from "./pages/ChangePasswordPage";
+import { CasePage } from "./pages/cases/CasePage";
 import { IndexPage } from "./pages/IndexPage";
 import { LoginPage } from "./pages/LoginPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { PatientDetailPage } from "./pages/patients/PatientDetailPage";
 import { PatientFormPage } from "./pages/patients/PatientFormPage";
 import { PatientsPage } from "./pages/patients/PatientsPage";
+import { UploadPage } from "./pages/upload/UploadPage";
 
 export const routes: RouteObject[] = [
   { path: "/login", element: <LoginPage /> },
@@ -25,14 +27,22 @@ export const routes: RouteObject[] = [
       { index: true, element: <IndexPage /> },
       { path: "change-password", element: <ChangePasswordPage /> },
       {
-        // Patient data is for doctors only (section 9.3); the server enforces it too.
-        path: "patients",
+        // Patients, uploads and cases are for doctors only (section 9.3); the server
+        // enforces it too.
         element: <RequireRole roles={["doctor"]} />,
         children: [
-          { index: true, element: <PatientsPage /> },
-          { path: "new", element: <PatientFormPage /> },
-          { path: ":patientId", element: <PatientDetailPage /> },
-          { path: ":patientId/edit", element: <PatientFormPage /> },
+          {
+            path: "patients",
+            children: [
+              { index: true, element: <PatientsPage /> },
+              { path: "new", element: <PatientFormPage /> },
+              { path: ":patientId", element: <PatientDetailPage /> },
+              { path: ":patientId/edit", element: <PatientFormPage /> },
+              { path: ":patientId/upload", element: <UploadPage /> },
+            ],
+          },
+          { path: "upload", element: <UploadPage /> },
+          { path: "cases/:caseId", element: <CasePage /> },
         ],
       },
       {

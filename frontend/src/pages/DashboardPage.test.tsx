@@ -1,16 +1,41 @@
-import { fireEvent, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { act, fireEvent, screen, within } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { LATER_PHASE } from "../navigation";
 import { doctor, emptyStats, mockApi, signedInAs } from "../test/api";
 import { patientPage } from "../test/patients";
 import { renderRoute } from "../test/render";
+import { DASHBOARD_POLL_MS } from "./DashboardPage";
 
 function statValue(label: string) {
   return within(screen.getByRole("group", { name: label })).getByText(/^\d+$/).textContent;
 }
 
 describe("Doctor dashboard (M-02)", () => {
+  afterEach(() => vi.useRealTimers());
+
+  it("keeps the counts live: they refresh every 10 seconds (FR-02.1)", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    let completed = 0;
+    mockApi({
+      ...signedInAs(doctor),
+      "GET /api/dashboard/stats": () => ({
+        body: {
+          ...emptyStats,
+          total_patients: 1,
+          scans_last_7_days: 1,
+          completed_cases: completed,
+        },
+      }),
+    });
+    renderRoute("/");
+    await screen.findAllByText("1", { selector: "p" });
+    expect(statValue("Completed cases")).toBe("0");
+
+    completed = 1; // the worker finished a case meanwhile
+    await act(() => vi.advanceTimersByTimeAsync(DASHBOARD_POLL_MS));
+    expect(statValue("Completed cases")).toBe("1");
+  });
+
   it("shows the FR-02.1 counts from the API", async () => {
     mockApi({
       ...signedInAs(doctor),
@@ -46,7 +71,7 @@ describe("Doctor dashboard (M-02)", () => {
     ).toBeInTheDocument();
   });
 
-  it("lists recent cases with links to the patient", async () => {
+  it("lists recent cases with links to the patient and the case", async () => {
     mockApi({
       ...signedInAs(doctor),
       "GET /api/dashboard/recent-cases": {
@@ -67,8 +92,12 @@ describe("Doctor dashboard (M-02)", () => {
     const link = await screen.findByRole("link", { name: "Amina Bibi" });
     expect(link).toHaveAttribute("href", "/patients/p-1");
     const row = link.closest("tr")!;
-    expect(within(row).getByText("completed")).toBeInTheDocument();
+    expect(within(row).getByText("Completed")).toBeInTheDocument();
     expect(within(row).getByText("TB")).toBeInTheDocument();
+    expect(within(row).getByRole("link", { name: /Open the case of Amina Bibi/ })).toHaveAttribute(
+      "href",
+      "/cases/c-1",
+    );
   });
 
   it("searches patients from the dashboard (FR-02.3)", async () => {
@@ -89,14 +118,14 @@ describe("Doctor dashboard (M-02)", () => {
     expect(api.callsTo("GET", "/api/patients")[0].query.get("q")).toBe("amina");
   });
 
-  it("shows Upload CT, disabled with the later-phase tooltip (FR-02.3)", async () => {
-    mockApi(signedInAs(doctor));
-    renderRoute("/");
+  it("opens the upload page from Upload CT (FR-02.3, NFR-5)", async () => {
+    mockApi({ ...signedInAs(doctor), "GET /api/patients": { body: patientPage([]) } });
+    const { router } = renderRoute("/");
 
-    const upload = await screen.findByRole("button", { name: "Upload CT" });
-    expect(upload).toBeDisabled();
-    expect(upload).toHaveAccessibleDescription(LATER_PHASE);
-    expect(upload.closest("[title]")).toHaveAttribute("title", "Available in a later phase");
+    fireEvent.click(await screen.findByRole("link", { name: "Upload CT" }));
+
+    expect(await screen.findByRole("heading", { name: "Upload CT scan" })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe("/upload");
   });
 
   it("shows an error if the counts cannot be loaded", async () => {
