@@ -1,28 +1,25 @@
 import { screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import { DISCLAIMER } from "../components/Layout";
-import { mockFetchJson, renderRoute } from "../test/render";
-
-const healthy = { status: "ok", version: "0.1.0", database: "ok", redis: "ok" };
+import { DISCLAIMER } from "../navigation";
+import { doctor, mockApi, signedInAs } from "../test/api";
+import { renderRoute } from "../test/render";
 
 describe("Home page", () => {
-  it("shows the CaviNet shell, welcome text and disclaimer", async () => {
-    vi.stubGlobal("fetch", mockFetchJson(200, healthy));
+  it("greets the signed-in user and shows the disclaimer and system status", async () => {
+    mockApi(signedInAs(doctor));
     renderRoute("/");
 
-    expect(screen.getByRole("link", { name: "CaviNet" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Welcome to CaviNet" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Welcome, Dan Doctor" })).toBeInTheDocument();
     expect(screen.getByText(DISCLAIMER)).toBeInTheDocument();
     expect(await screen.findByText("All systems operational")).toBeInTheDocument();
   });
 
   it("requests the health endpoint through the /api proxy", async () => {
-    const fetchMock = mockFetchJson(200, healthy);
-    vi.stubGlobal("fetch", fetchMock);
+    const api = mockApi(signedInAs(doctor));
     renderRoute("/");
 
     await screen.findByText("All systems operational");
-    expect(fetchMock).toHaveBeenCalledWith("/api/health", expect.anything());
+    expect(api.callsTo("GET", "/api/health")).toHaveLength(1);
   });
 });
