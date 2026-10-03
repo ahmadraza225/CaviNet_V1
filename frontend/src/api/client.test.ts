@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { admin, mockApi, session } from "../test/api";
-import { ApiError, apiFetch, refreshSession } from "./client";
+import { admin, mockApi, png, session } from "../test/api";
+import { ApiError, apiFetch, apiFetchBlob, refreshSession, setAccessToken } from "./client";
 
 describe("apiFetch", () => {
   it("turns FastAPI validation errors into one readable message", async () => {
@@ -54,5 +54,41 @@ describe("apiFetch", () => {
     expect(first?.user.email).toBe(admin.email);
     expect(second).toEqual(first);
     expect(api.callsTo("POST", "/api/auth/refresh")).toHaveLength(1);
+  });
+});
+
+describe("apiFetchBlob", () => {
+  it("sends the access token and returns the image bytes", async () => {
+    const api = mockApi({ "GET /api/cases/c-1/previews/3": png });
+    setAccessToken("token-1");
+    const blob = await apiFetchBlob("/api/cases/c-1/previews/3");
+    expect(blob.type).toBe("image/png");
+    expect(new Uint8Array(await blob.arrayBuffer())).toEqual(png.binary.bytes);
+    const [call] = api.callsTo("GET", "/api/cases/c-1/previews/3");
+    expect(call.headers.get("Authorization")).toBe("Bearer token-1");
+    expect(call.headers.get("Accept")).toBe("*/*");
+  });
+
+  it("renews an expired session once, then retries", async () => {
+    let calls = 0;
+    const api = mockApi({
+      "GET /api/x.png": () =>
+        ++calls === 1 ? { status: 401, body: { detail: "Expired", code: "token_expired" } } : png,
+      "POST /api/auth/refresh": { body: session(admin) },
+    });
+    setAccessToken("old-token");
+    const blob = await apiFetchBlob("/api/x.png");
+    expect(blob.size).toBe(8);
+    expect(api.callsTo("GET", "/api/x.png")[1].headers.get("Authorization")).toBe(
+      `Bearer token-${admin.id}`,
+    );
+  });
+
+  it("throws the server's message for a missing image", async () => {
+    mockApi({ "GET /api/x.png": { status: 404, body: { detail: "Preview not found." } } });
+    await expect(apiFetchBlob("/api/x.png")).rejects.toMatchObject({
+      status: 404,
+      message: "Preview not found.",
+    });
   });
 });

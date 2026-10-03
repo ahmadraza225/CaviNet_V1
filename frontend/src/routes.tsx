@@ -3,6 +3,7 @@ import { Navigate, type RouteObject } from "react-router-dom";
 import { RequireAuth, RequireRole } from "./auth/RequireAuth";
 import { Layout } from "./components/Layout";
 import { AuditLogPage } from "./pages/admin/AuditLogPage";
+import { ModelPage } from "./pages/admin/ModelPage";
 import { UsersPage } from "./pages/admin/UsersPage";
 import { ChangePasswordPage } from "./pages/ChangePasswordPage";
 import { CasePage } from "./pages/cases/CasePage";
@@ -52,6 +53,7 @@ export const routes: RouteObject[] = [
           { index: true, element: <Navigate to="users" replace /> },
           { path: "users", element: <UsersPage /> },
           { path: "audit-log", element: <AuditLogPage /> },
+          { path: "model", element: <ModelPage /> },
         ],
       },
       { path: "*", element: <NotFoundPage /> },
