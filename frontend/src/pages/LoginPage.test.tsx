@@ -29,12 +29,12 @@ describe("Sign-in (FR-01.1, FR-01.2)", () => {
 
     signIn("doctor@example.org", "Passw0rd123");
 
-    expect(await screen.findByRole("heading", { name: "Welcome, Dan Doctor" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Dashboard" })).toBeInTheDocument();
     expect(api.callsTo("POST", "/api/auth/login")[0].body).toEqual({
       email: "doctor@example.org",
       password: "Passw0rd123",
     });
-    expect(navLinks()).toEqual(["Home"]);
+    expect(navLinks()).toEqual(["Dashboard", "Patients"]);
     expect(screen.queryByRole("link", { name: "Users" })).not.toBeInTheDocument();
     expect(screen.getByText("Doctor")).toBeInTheDocument();
   });

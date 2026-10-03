@@ -72,7 +72,21 @@ export function session(user: UserSummary): TokenResponse {
 }
 
 export const healthy = {
-  body: { status: "ok", version: "0.2.0", database: "ok", redis: "ok" },
+  body: { status: "ok", version: "0.3.0", database: "ok", redis: "ok" },
+};
+
+export const emptyStats = {
+  total_patients: 0,
+  scans_last_7_days: 0,
+  cases_in_progress: 0,
+  completed_cases: 0,
+  failed_cases: 0,
+};
+
+/** The doctor dashboard before any cases exist (Phase 3). */
+export const emptyDashboard: Record<string, Handler> = {
+  "GET /api/dashboard/stats": { body: emptyStats },
+  "GET /api/dashboard/recent-cases": { body: [] },
 };
 
 /** Handlers for a browser that already has a valid session for `user`. */
@@ -81,6 +95,7 @@ export function signedInAs(user: UserSummary): Record<string, Handler> {
     "POST /api/auth/refresh": { body: session(user) },
     "POST /api/auth/logout": { status: 204 },
     "GET /api/health": healthy,
+    ...emptyDashboard,
   };
 }
 
@@ -89,5 +104,6 @@ export function signedOut(): Record<string, Handler> {
   return {
     "POST /api/auth/refresh": { status: 401, body: { detail: "No session", code: "no_session" } },
     "GET /api/health": healthy,
+    ...emptyDashboard,
   };
 }

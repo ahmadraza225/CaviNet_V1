@@ -5,9 +5,12 @@ import { Layout } from "./components/Layout";
 import { AuditLogPage } from "./pages/admin/AuditLogPage";
 import { UsersPage } from "./pages/admin/UsersPage";
 import { ChangePasswordPage } from "./pages/ChangePasswordPage";
-import { HomePage } from "./pages/HomePage";
+import { IndexPage } from "./pages/IndexPage";
 import { LoginPage } from "./pages/LoginPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
+import { PatientDetailPage } from "./pages/patients/PatientDetailPage";
+import { PatientFormPage } from "./pages/patients/PatientFormPage";
+import { PatientsPage } from "./pages/patients/PatientsPage";
 
 export const routes: RouteObject[] = [
   { path: "/login", element: <LoginPage /> },
@@ -19,8 +22,19 @@ export const routes: RouteObject[] = [
       </RequireAuth>
     ),
     children: [
-      { index: true, element: <HomePage /> },
+      { index: true, element: <IndexPage /> },
       { path: "change-password", element: <ChangePasswordPage /> },
+      {
+        // Patient data is for doctors only (section 9.3); the server enforces it too.
+        path: "patients",
+        element: <RequireRole roles={["doctor"]} />,
+        children: [
+          { index: true, element: <PatientsPage /> },
+          { path: "new", element: <PatientFormPage /> },
+          { path: ":patientId", element: <PatientDetailPage /> },
+          { path: ":patientId/edit", element: <PatientFormPage /> },
+        ],
+      },
       {
         path: "admin",
         element: <RequireRole roles={["admin"]} />,

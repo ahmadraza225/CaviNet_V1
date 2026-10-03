@@ -3,6 +3,7 @@ import type {
   InputHTMLAttributes,
   ReactNode,
   SelectHTMLAttributes,
+  TextareaHTMLAttributes,
 } from "react";
 
 type Tone = "error" | "success" | "info" | "warning";
@@ -25,12 +26,54 @@ export function Alert({ tone = "info", children }: { tone?: Tone; children: Reac
   );
 }
 
+const fieldClasses =
+  "mt-1 block w-full rounded-md border px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600";
+
+interface FieldProps {
+  label: string;
+  id: string;
+  hint?: string;
+  /** Validation message shown under the field; marks the field invalid. */
+  error?: string;
+}
+
+/** aria attributes linking a field to its hint and error message. */
+function describe(id: string, hint?: string, error?: string) {
+  const ids = [hint ? `${id}-hint` : "", error ? `${id}-error` : ""].filter(Boolean);
+  return {
+    "aria-invalid": error ? true : undefined,
+    "aria-describedby": ids.length ? ids.join(" ") : undefined,
+  };
+}
+
+function borderFor(error?: string) {
+  return error ? "border-red-400" : "border-slate-300";
+}
+
+function FieldText({ id, hint, error }: { id: string; hint?: string; error?: string }) {
+  return (
+    <>
+      {hint && (
+        <p id={`${id}-hint`} className="mt-1 text-xs text-slate-500">
+          {hint}
+        </p>
+      )}
+      {error && (
+        <p id={`${id}-error`} className="mt-1 text-xs font-medium text-red-700">
+          {error}
+        </p>
+      )}
+    </>
+  );
+}
+
 export function TextField({
   label,
   id,
   hint,
+  error,
   ...input
-}: InputHTMLAttributes<HTMLInputElement> & { label: string; id: string; hint?: string }) {
+}: InputHTMLAttributes<HTMLInputElement> & FieldProps) {
   return (
     <div>
       <label htmlFor={id} className="block text-sm font-medium text-slate-700">
@@ -38,10 +81,34 @@ export function TextField({
       </label>
       <input
         id={id}
+        {...describe(id, hint, error)}
         {...input}
-        className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
+        className={`${fieldClasses} ${borderFor(error)}`}
       />
-      {hint && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
+      <FieldText id={id} hint={hint} error={error} />
+    </div>
+  );
+}
+
+export function TextAreaField({
+  label,
+  id,
+  hint,
+  error,
+  ...textarea
+}: TextareaHTMLAttributes<HTMLTextAreaElement> & FieldProps) {
+  return (
+    <div>
+      <label htmlFor={id} className="block text-sm font-medium text-slate-700">
+        {label}
+      </label>
+      <textarea
+        id={id}
+        {...describe(id, hint, error)}
+        {...textarea}
+        className={`${fieldClasses} ${borderFor(error)}`}
+      />
+      <FieldText id={id} hint={hint} error={error} />
     </div>
   );
 }
@@ -49,9 +116,11 @@ export function TextField({
 export function SelectField({
   label,
   id,
+  hint,
+  error,
   children,
   ...select
-}: SelectHTMLAttributes<HTMLSelectElement> & { label: string; id: string }) {
+}: SelectHTMLAttributes<HTMLSelectElement> & FieldProps) {
   return (
     <div>
       <label htmlFor={id} className="block text-sm font-medium text-slate-700">
@@ -59,11 +128,13 @@ export function SelectField({
       </label>
       <select
         id={id}
+        {...describe(id, hint, error)}
         {...select}
-        className="mt-1 block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
+        className={`${fieldClasses} ${borderFor(error)} bg-white`}
       >
         {children}
       </select>
+      <FieldText id={id} hint={hint} error={error} />
     </div>
   );
 }

@@ -14,7 +14,7 @@ describe("Protected routes and sessions", () => {
   it("signs out on request and says so (FR-01.2)", async () => {
     const api = mockApi(signedInAs(doctor));
     renderRoute("/");
-    await screen.findByRole("heading", { name: "Welcome, Dan Doctor" });
+    await screen.findByRole("heading", { name: "Dashboard" });
 
     fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
 
@@ -55,7 +55,7 @@ describe("Protected routes and sessions", () => {
   it("signs out after a period of inactivity (FR-01.5)", async () => {
     const api = mockApi(signedInAs(doctor));
     renderRoute("/", { inactivityLimitMs: 200 });
-    await screen.findByRole("heading", { name: "Welcome, Dan Doctor" });
+    await screen.findByRole("heading", { name: "Dashboard" });
 
     expect(
       await screen.findByText("You were signed out after 30 minutes of inactivity.", undefined, {

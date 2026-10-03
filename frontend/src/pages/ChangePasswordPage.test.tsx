@@ -39,7 +39,7 @@ describe("Change password page", () => {
     fill("Temp-pass123", "Another-pass1", "Another-pass1");
 
     expect(await screen.findByText("Your password has been changed.")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Welcome, Dan Doctor" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Dashboard" })).toBeInTheDocument();
     expect(screen.getByRole("navigation", { name: "Main navigation" })).toBeInTheDocument();
     expect(api.callsTo("POST", "/api/auth/change-password")[0].body).toEqual({
       current_password: "Temp-pass123",
