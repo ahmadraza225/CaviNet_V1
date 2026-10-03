@@ -113,6 +113,24 @@ jobs:
           curl -fsS http://localhost:8080/api/health | tee health.json
           grep -q '"database":"ok"' health.json
           grep -q '"redis":"ok"' health.json
+      - name: Sign in as the first admin (FR-01.7) and the seeded demo doctor
+        run: |
+          set -a; source .env; set +a
+          login() {
+            curl -fsS -c cookies.txt -H "Content-Type: application/json" \
+              -d "{\"email\":\"$1\",\"password\":\"$2\"}" http://localhost:8080/api/auth/login
+          }
+          login "$ADMIN_EMAIL" "$ADMIN_PASSWORD" | tee admin.json
+          grep -q '"role":"admin"' admin.json
+          grep -q '"must_change_password":true' admin.json
+          grep -q cavinet_refresh cookies.txt
+          make seed
+          login "$DEMO_DOCTOR_EMAIL" "$DEMO_DOCTOR_PASSWORD" | tee doctor.json
+          grep -q '"role":"doctor"' doctor.json
+          token=$(sed 's/.*"access_token":"\([^"]*\)".*/\1/' doctor.json)
+          status=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" \
+            http://localhost:8080/api/admin/users)
+          test "$status" = "403"
       - name: Show service logs
         if: failure()
         run: docker compose logs

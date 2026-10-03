@@ -12,20 +12,19 @@ HEALTH_URL := http://localhost:$(CAVINET_HTTP_PORT)/api/health
 
 .DEFAULT_GOAL := help
 
-.PHONY: help up down logs ps install test test-backend test-ml test-frontend \
+.PHONY: help env up down logs ps install test test-backend test-ml test-frontend \
         lint lint-python lint-frontend format seed fetch-model backup restore
 
 help: ## Show this list of commands
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | \
 	  awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
 
-.env:
-	cp .env.example .env
-	@echo "Created .env from .env.example. Change POSTGRES_PASSWORD before real use."
+env: ## Create .env with generated secrets, or add settings new in .env.example
+	@./scripts/init_env.sh
 
 ## ---- Running the system (needs Docker) ----
 
-up: .env ## Build and start every service, then wait until healthy
+up: env ## Build and start every service, then wait until healthy
 	$(COMPOSE) up -d --build
 	@./scripts/wait_for_health.sh $(HEALTH_URL) 300
 	@echo "Open http://localhost:$(CAVINET_HTTP_PORT)"
@@ -39,7 +38,7 @@ logs: ## Follow the logs of every service
 ps: ## Show service status
 	$(COMPOSE) ps
 
-seed: ## Load demo data (demo accounts arrive in Phase 2)
+seed: ## Create the demo doctor account (DEMO_DOCTOR_EMAIL / DEMO_DOCTOR_PASSWORD in .env)
 	$(COMPOSE) exec backend python -m app.seed
 
 fetch-model: ## Download the trained model (stub until Phase 5)
