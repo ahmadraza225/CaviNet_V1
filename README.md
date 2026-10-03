@@ -16,8 +16,9 @@ Final Year Project, Department of Computer Science, Air University Islamabad (20
 
 | Phase | Content | Status |
 |---|---|---|
-| 1 | Foundation: repository, Docker, CI, app shells | ✅ This version |
-| 2–7 | Accounts, patients, CT upload, AI inference, training toolkit, reports | Planned |
+| 1 | Foundation: repository, Docker, CI, app shells | ✅ Done |
+| 2 | Accounts, roles, admin users page and audit log | ✅ This version |
+| 3–7 | Patients, CT upload, AI inference, training toolkit, reports | Planned |
 | 8–12 | Model training on the real dataset, integration, optional extras, final release | Planned |
 
 The full plan, requirements and phase prompts are in the scope document:
@@ -36,21 +37,33 @@ make up
 ```
 
 Then open **http://localhost:8080**. The first `make up` downloads and builds everything
-(a few minutes); later starts take seconds. The page's *System status* card should show
-every service as **Working**.
+(a few minutes); later starts take seconds.
+
+### Signing in
+
+- The first `make up` creates `.env` with random secrets and prints the **first administrator's
+  sign-in** (`ADMIN_EMAIL` / `ADMIN_PASSWORD`, also stored in `.env`). At first sign-in you must
+  choose a new password.
+- Admins create doctor and admin accounts on the **Users** page with a temporary password; the
+  new user must change it at first sign-in. Forgotten passwords are reset the same way (there is
+  no email).
+- `make seed` adds a demo doctor (`DEMO_DOCTOR_EMAIL` / `DEMO_DOCTOR_PASSWORD` in `.env`).
+- Accounts lock for 15 minutes after 5 wrong passwords; the web app signs out after 30 minutes
+  without activity, and every session ends after 8 hours.
 
 | Command | What it does |
 |---|---|
 | `make up` | Build and start every service, then wait until healthy |
 | `make down` | Stop every service (data is kept) |
 | `make ps` / `make logs` | Show service status / follow logs |
-| `make seed` | Load demo data (demo accounts arrive in Phase 2) |
+| `make seed` | Create the demo doctor account |
 | `make fetch-model` | Download the trained model (available from Phase 5) |
 | `make backup` | Save the database and stored files to `backups/<timestamp>/` |
 | `make restore BACKUP=backups/<timestamp>` | Restore a backup (replaces current data) |
 
-On first run `make up` creates `.env` from `.env.example`. Change `POSTGRES_PASSWORD` there
-before storing real data. To use a different port, set `CAVINET_HTTP_PORT`.
+`make up` creates `.env` from `.env.example` with generated secrets (and adds any new settings
+to an existing `.env`). Keep `.env` private. To use a different port, set `CAVINET_HTTP_PORT`;
+if CaviNet is ever served over HTTPS, set `COOKIE_SECURE=true`.
 
 ## Development
 

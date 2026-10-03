@@ -25,13 +25,13 @@ Phase 1 implements no functional requirement; it provides the platform they are 
 
 | FR ID | Requirement (summary) | Phase | Implemented in | Tests | Status |
 |---|---|---|---|---|---|
-| FR-01.1 | Users log in with email and password. Passwords are hashed with Argon2id; minimum 10… | 2 | — | — | Planned |
-| FR-01.2 | Successful login issues a 30-minute access token (JWT) and an 8-hour refresh token in an… | 2 | — | — | Planned |
-| FR-01.3 | Two roles: Doctor and Admin (Section 9.3). Every API endpoint checks the role server-side;… | 2 | — | — | Planned |
-| FR-01.4 | After 5 failed logins an account is locked for 15 minutes. | 2 | — | — | Planned |
-| FR-01.5 | The frontend logs the user out after 30 minutes of inactivity. | 2 | — | — | Planned |
-| FR-01.6 | No email server: an admin resets a password by setting a temporary one; the user must change… | 2 | — | — | Planned |
-| FR-01.7 | The first admin account is created from environment variables on first start. | 2 | — | — | Planned |
+| FR-01.1 | Users log in with email and password. Passwords are hashed with Argon2id; minimum 10… | 2 | `backend/app/core/security.py`, `backend/app/services/auth.py`, `frontend/src/pages/LoginPage.tsx` | `backend/tests/test_security.py::test_fr01_1_*`, `backend/tests/test_auth.py::test_fr01_1_*`, `backend/tests/test_auth.py::test_fr01_2_login_success_*`, `frontend/src/pages/LoginPage.test.tsx` | Implemented |
+| FR-01.2 | Successful login issues a 30-minute access token (JWT) and an 8-hour refresh token in an… | 2 | `backend/app/core/security.py`, `backend/app/services/auth.py`, `backend/app/api/routes/auth.py`, `frontend/src/api/client.ts` | `backend/tests/test_auth.py::test_fr01_2_*` (login, 30-min expiry, refresh rotation, 8-h session, logout), `backend/tests/test_security.py::test_fr01_2_*`, `frontend/src/auth/session.test.tsx` | Implemented |
+| FR-01.3 | Two roles: Doctor and Admin (Section 9.3). Every API endpoint checks the role server-side;… | 2 | `backend/app/api/deps.py` (`require_roles`), `backend/app/main.py` (`PUBLIC_PATHS`), `frontend/src/auth/RequireAuth.tsx` | `backend/tests/test_role_coverage.py` (walks every endpoint: 401 without token, 403 for the wrong role), `frontend/src/auth/session.test.tsx` | Implemented |
+| FR-01.4 | After 5 failed logins an account is locked for 15 minutes. | 2 | `backend/app/services/auth.py::authenticate` | `backend/tests/test_auth.py::test_fr01_4_*`, `backend/tests/test_integration.py::test_account_flow_on_postgres`, `frontend/src/pages/LoginPage.test.tsx` | Implemented |
+| FR-01.5 | The frontend logs the user out after 30 minutes of inactivity. | 2 | `frontend/src/auth/useInactivityTimeout.ts`, `frontend/src/auth/AuthProvider.tsx` | `frontend/src/auth/useInactivityTimeout.test.ts`, `frontend/src/auth/session.test.tsx` (signs out after inactivity) | Implemented |
+| FR-01.6 | No email server: an admin resets a password by setting a temporary one; the user must change… | 2 | `backend/app/services/users.py::reset_password`, `backend/app/api/deps.py` (pending-change block), `frontend/src/pages/ChangePasswordPage.tsx` | `backend/tests/test_auth.py::test_fr01_6_*`, `backend/tests/test_admin_users.py::test_fr01_6_*`, `backend/tests/test_role_coverage.py::test_fr01_6_*`, `frontend/src/pages/ChangePasswordPage.test.tsx` | Implemented |
+| FR-01.7 | The first admin account is created from environment variables on first start. | 2 | `backend/app/services/users.py::ensure_initial_admin`, `backend/app/main.py` (startup), `scripts/init_env.sh` | `backend/tests/test_bootstrap.py`, CI job "Full stack" (signs in as the generated admin) | Implemented |
 | FR-02.1 | Shows counts: total patients, scans uploaded in the last 7 days, cases in progress, completed… | 3 | — | — | Planned |
 | FR-02.2 | Shows the 10 most recent cases (patient, upload time, status, result if complete) with links. | 3 | — | — | Planned |
 | FR-02.3 | Has an "Upload CT" shortcut and a patient search box. | 3 | — | — | Planned |
@@ -61,9 +61,9 @@ Phase 1 implements no functional requirement; it provides the platform they are 
 | FR-08.1 | Case statuses: Uploaded → Validating → Queued → Preprocessing → Analysing → Completed /… | 4 | — | — | Planned |
 | FR-08.2 | In-app notification (bell icon with unread count) to the uploading doctor when a case… | 4 | — | — | Planned |
 | FR-08.3 | Notifications can be marked read individually or all at once. | 4 | — | — | Planned |
-| FR-09.1 | Admin can create users, assign role, deactivate/reactivate users and reset passwords (FR-01.6). | 2 | — | — | Planned |
-| FR-09.2 | Audit log records: login success/failure, logout, user management actions, patient… | 2 | — | — | Planned |
-| FR-09.3 | Admin can view and filter the audit log (by user, action, date). | 2 | — | — | Planned |
+| FR-09.1 | Admin can create users, assign role, deactivate/reactivate users and reset passwords (FR-01.6). | 2 | `backend/app/services/users.py`, `backend/app/api/routes/admin.py`, `frontend/src/pages/admin/UsersPage.tsx` | `backend/tests/test_admin_users.py::test_fr09_1_*`, `frontend/src/pages/admin/UsersPage.test.tsx` | Implemented |
+| FR-09.2 | Audit log records: login success/failure, logout, user management actions, patient… | 2 | `backend/app/services/audit.py`, `backend/app/models/audit_log.py`, `backend/app/core/request_context.py` | `backend/tests/test_audit.py::test_fr09_2_every_audit_action_so_far_is_recorded`, `test_fr09_2_audit_entries_never_contain_passwords` | Implemented (account events); patient, upload, result and report events arrive in Phases 3–7 |
+| FR-09.3 | Admin can view and filter the audit log (by user, action, date). | 2 | `backend/app/api/routes/admin.py::list_audit_logs`, `frontend/src/pages/admin/AuditLogPage.tsx` | `backend/tests/test_audit.py::test_fr09_3_*`, `frontend/src/pages/admin/AuditLogPage.test.tsx` | Implemented |
 | FR-09.4 | Admin can view model information: version, training date, demo/real flag, validated metrics. | 5 | — | — | Planned |
 | FR-10.1 | cavinet-ml index: reads the Kaggle zip or extracted folder plus PatientIndex.xlsx and writes… | 6, 8 | — | — | Planned |
 | FR-10.2 | cavinet-ml preprocess: applies Section 11.1 to every case, processing the zip patient by… | 6, 8 | — | — | Planned |
