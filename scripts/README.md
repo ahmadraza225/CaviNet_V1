@@ -34,7 +34,8 @@ problems exist. It does not assume a folder layout.
 
 ```python
 from IPython.display import Markdown
-Markdown(open('/kaggle/working/audit/audit_report.md').read())
+
+Markdown(open("/kaggle/working/audit/audit_report.md").read())
 ```
 
 7. Download `/kaggle/working/audit/` from the **Output** panel and commit
