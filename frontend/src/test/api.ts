@@ -10,10 +10,14 @@ export interface RecordedCall {
   headers: Headers;
 }
 
-type Reply = { status?: number; body?: unknown };
+/** `binary` sends raw bytes (e.g. a preview PNG) instead of JSON. */
+type Reply = { status?: number; body?: unknown; binary?: { bytes: Uint8Array; type: string } };
 type Handler = Reply | ((call: RecordedCall) => Reply);
 
-function jsonResponse({ status = 200, body }: Reply): Response {
+function jsonResponse({ status = 200, body, binary }: Reply): Response {
+  if (binary) {
+    return new Response(binary.bytes, { status, headers: { "Content-Type": binary.type } });
+  }
   return new Response(status === 204 ? null : JSON.stringify(body ?? {}), {
     status,
     headers: { "Content-Type": "application/json" },
@@ -71,8 +75,13 @@ export function session(user: UserSummary): TokenResponse {
   return { access_token: `token-${user.id}`, token_type: "bearer", expires_in: 1800, user };
 }
 
+/** The first bytes of a PNG file: enough for a fake preview image. */
+export const png = {
+  binary: { bytes: new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]), type: "image/png" },
+};
+
 export const healthy = {
-  body: { status: "ok", version: "0.4.0", database: "ok", redis: "ok" },
+  body: { status: "ok", version: "0.5.0", database: "ok", redis: "ok" },
 };
 
 export const emptyStats = {
@@ -81,6 +90,32 @@ export const emptyStats = {
   cases_in_progress: 0,
   completed_cases: 0,
   failed_cases: 0,
+};
+
+/** GET /api/model/status for a trained model, the demo model (FR-05.6) and no model. */
+export const realModel = {
+  installed: true,
+  is_demo: false,
+  model_name: "CaviNet ResNet-18 ensemble",
+  model_version: "1.0.0",
+  created_at: "2026-12-01T10:00:00Z",
+  demo_banner: null,
+};
+export const demoModel = {
+  installed: true,
+  is_demo: true,
+  model_name: "CaviNet demo model (synthetic data)",
+  model_version: "demo-0.5.0",
+  created_at: "2026-10-03T08:00:00Z",
+  demo_banner: "DEMO MODEL: NOT FOR CLINICAL USE",
+};
+export const noModel = {
+  installed: false,
+  is_demo: false,
+  model_name: null,
+  model_version: null,
+  created_at: null,
+  demo_banner: null,
 };
 
 /** The doctor dashboard before any cases exist, and no notifications. */
@@ -97,6 +132,7 @@ export function signedInAs(user: UserSummary): Record<string, Handler> {
     "POST /api/auth/refresh": { body: session(user) },
     "POST /api/auth/logout": { status: 204 },
     "GET /api/health": healthy,
+    "GET /api/model/status": { body: realModel },
     ...emptyDashboard,
   };
 }

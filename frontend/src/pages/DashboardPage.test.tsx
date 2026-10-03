@@ -83,6 +83,16 @@ describe("Doctor dashboard (M-02)", () => {
             uploaded_at: "2026-10-03T08:00:00Z",
             status: "completed",
             result: "TB",
+            result_is_demo: false,
+          },
+          {
+            case_id: "c-2",
+            patient_id: "p-2",
+            patient_name: "Bilal Khan",
+            uploaded_at: "2026-10-03T07:00:00Z",
+            status: "completed",
+            result: "NTM",
+            result_is_demo: true,
           },
         ],
       },
@@ -94,6 +104,14 @@ describe("Doctor dashboard (M-02)", () => {
     const row = link.closest("tr")!;
     expect(within(row).getByText("Completed")).toBeInTheDocument();
     expect(within(row).getByText("TB")).toBeInTheDocument();
+    expect(within(row).queryByText("Demo")).not.toBeInTheDocument();
+    // FR-05.6: a result from the demo model is flagged wherever it appears.
+    const demoRow = screen.getByRole("link", { name: "Bilal Khan" }).closest("tr")!;
+    expect(within(demoRow).getByText("NTM")).toBeInTheDocument();
+    expect(within(demoRow).getByText("Demo")).toHaveAttribute(
+      "title",
+      "DEMO MODEL: NOT FOR CLINICAL USE",
+    );
     expect(within(row).getByRole("link", { name: /Open the case of Amina Bibi/ })).toHaveAttribute(
       "href",
       "/cases/c-1",
