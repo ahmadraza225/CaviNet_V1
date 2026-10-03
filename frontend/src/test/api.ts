@@ -72,7 +72,7 @@ export function session(user: UserSummary): TokenResponse {
 }
 
 export const healthy = {
-  body: { status: "ok", version: "0.3.0", database: "ok", redis: "ok" },
+  body: { status: "ok", version: "0.4.0", database: "ok", redis: "ok" },
 };
 
 export const emptyStats = {
@@ -83,10 +83,12 @@ export const emptyStats = {
   failed_cases: 0,
 };
 
-/** The doctor dashboard before any cases exist (Phase 3). */
+/** The doctor dashboard before any cases exist, and no notifications. */
 export const emptyDashboard: Record<string, Handler> = {
   "GET /api/dashboard/stats": { body: emptyStats },
   "GET /api/dashboard/recent-cases": { body: [] },
+  "GET /api/notifications/unread-count": { body: { count: 0 } },
+  "GET /api/notifications": { body: { items: [], total: 0, page: 1, page_size: 20 } },
 };
 
 /** Handlers for a browser that already has a valid session for `user`. */

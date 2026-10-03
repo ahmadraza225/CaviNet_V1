@@ -5,9 +5,13 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { getDashboardStats, getRecentCases, type DashboardStats } from "../api/dashboard";
 import { useAuth } from "../auth/context";
 import { SystemStatus } from "../components/SystemStatus";
+import { StatusBadge } from "../components/StatusBadge";
 import { Alert, Button } from "../components/ui";
 import { UploadCtButton } from "../components/UploadCtButton";
 import { formatDateTime } from "../format";
+
+/** FR-02.1 counts stay live: they refresh every 10 seconds. */
+export const DASHBOARD_POLL_MS = 10_000;
 
 const STAT_CARDS: { key: keyof DashboardStats; label: string }[] = [
   { key: "total_patients", label: "Total patients" },
@@ -19,7 +23,11 @@ const STAT_CARDS: { key: keyof DashboardStats; label: string }[] = [
 
 /** FR-02.1 counts. */
 function StatCards() {
-  const stats = useQuery({ queryKey: ["dashboard", "stats"], queryFn: getDashboardStats });
+  const stats = useQuery({
+    queryKey: ["dashboard", "stats"],
+    queryFn: getDashboardStats,
+    refetchInterval: DASHBOARD_POLL_MS,
+  });
   if (stats.isError) return <Alert tone="error">{(stats.error as Error).message}</Alert>;
   return (
     <section aria-label="Statistics" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
@@ -45,9 +53,13 @@ function StatCards() {
   );
 }
 
-/** FR-02.2: the 10 most recent cases. Cases arrive with CT upload in a later phase. */
+/** FR-02.2: the 10 most recent cases, each linking to its case page. */
 function RecentCases() {
-  const cases = useQuery({ queryKey: ["dashboard", "recent-cases"], queryFn: getRecentCases });
+  const cases = useQuery({
+    queryKey: ["dashboard", "recent-cases"],
+    queryFn: getRecentCases,
+    refetchInterval: DASHBOARD_POLL_MS,
+  });
   return (
     <section aria-labelledby="recent-cases" className="rounded-lg bg-white shadow-sm">
       <h2 id="recent-cases" className="px-6 pt-5 text-lg font-semibold text-slate-800">
@@ -73,6 +85,9 @@ function RecentCases() {
                 <th className="px-3 py-2">Uploaded</th>
                 <th className="px-3 py-2">Status</th>
                 <th className="px-3 py-2">Result</th>
+                <th className="px-3 py-2">
+                  <span className="sr-only">Open</span>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -89,8 +104,19 @@ function RecentCases() {
                   <td className="whitespace-nowrap px-3 py-2 text-slate-600">
                     {formatDateTime(item.uploaded_at)}
                   </td>
-                  <td className="px-3 py-2">{item.status}</td>
+                  <td className="px-3 py-2">
+                    <StatusBadge status={item.status} />
+                  </td>
                   <td className="px-3 py-2">{item.result ?? "—"}</td>
+                  <td className="px-3 py-2 text-right">
+                    <Link
+                      to={`/cases/${item.case_id}`}
+                      aria-label={`Open the case of ${item.patient_name} uploaded ${formatDateTime(item.uploaded_at)}`}
+                      className="text-brand-700 underline"
+                    >
+                      Open case
+                    </Link>
+                  </td>
                 </tr>
               ))}
             </tbody>

@@ -1,20 +1,14 @@
-import { useId } from "react";
+import { Link } from "react-router-dom";
 
-import { LATER_PHASE } from "../navigation";
-import { Button } from "./ui";
-
-/** FR-02.3 "Upload CT" shortcut. Visible now, enabled when scan upload arrives (Phase 4).
- * A disabled button gets no mouse events, so the tooltip sits on a wrapper. */
-export function UploadCtButton() {
-  const hintId = useId();
+/** FR-02.3 "Upload CT" shortcut. With a patient it opens their upload page; without one
+ * (the dashboard) the upload page first asks which patient (NFR-5: two clicks to upload). */
+export function UploadCtButton({ patientId }: { patientId?: string }) {
   return (
-    <span title={LATER_PHASE} className="inline-block cursor-not-allowed">
-      <Button disabled aria-describedby={hintId} className="pointer-events-none">
-        Upload CT
-      </Button>
-      <span id={hintId} className="sr-only">
-        {LATER_PHASE}
-      </span>
-    </span>
+    <Link
+      to={patientId ? `/patients/${patientId}/upload` : "/upload"}
+      className="inline-block rounded-md bg-brand-700 px-3 py-2 text-sm font-medium text-white hover:bg-brand-800"
+    >
+      Upload CT
+    </Link>
   );
 }

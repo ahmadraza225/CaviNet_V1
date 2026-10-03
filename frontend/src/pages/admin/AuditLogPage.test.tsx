@@ -41,7 +41,7 @@ function setup(total = 2) {
 }
 
 describe("Admin Audit Log page (FR-09.3)", () => {
-  it("shows patient actions by record id only, never the patient's identity (NFR-3)", async () => {
+  it("shows patient and upload actions by record id only, never the patient's identity (NFR-3)", async () => {
     mockApi({
       ...signedInAs(admin),
       "GET /api/admin/users": { body: [admin, doctor] },
@@ -60,8 +60,19 @@ describe("Admin Audit Log page (FR-09.3)", () => {
               details: { fields: ["full_name", "date_of_birth"] },
               ip_address: "10.0.0.7",
             },
+            {
+              id: 4,
+              created_at: "2026-10-03T11:05:00Z",
+              user_id: doctor.id,
+              actor_email: doctor.email,
+              action: "scan_uploaded",
+              target_type: "case",
+              target_id: "9b1c2d3e-0000-4000-8000-000000000002",
+              details: { kind: "zip", files: 1, size_mb: 24.3 },
+              ip_address: "10.0.0.7",
+            },
           ],
-          total: 1,
+          total: 2,
           page: 1,
           page_size: 25,
         },
@@ -70,6 +81,9 @@ describe("Admin Audit Log page (FR-09.3)", () => {
     renderRoute("/admin/audit-log");
 
     expect(await screen.findByText("Patient edited", { selector: "td" })).toBeInTheDocument();
+    expect(screen.getByText("Scan uploaded", { selector: "td" })).toBeInTheDocument();
+    expect(screen.getByText("Case 9b1c2d3e")).toBeInTheDocument();
+    expect(screen.getByText("kind: zip, files: 1, size mb: 24.3")).toBeInTheDocument();
     expect(screen.getByText("Patient record 3f2a9c1e")).toBeInTheDocument();
     expect(screen.getByText("fields: full name, date of birth")).toBeInTheDocument();
   });
