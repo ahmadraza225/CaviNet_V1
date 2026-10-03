@@ -18,8 +18,9 @@ Final Year Project, Department of Computer Science, Air University Islamabad (20
 |---|---|---|
 | 1 | Foundation: repository, Docker, CI, app shells | ✅ Done |
 | 2 | Accounts, roles, admin users page and audit log | ✅ Done |
-| 3 | Patients and the doctor dashboard | ✅ This version |
-| 4–7 | CT upload, AI inference, training toolkit, reports | Planned |
+| 3 | Patients and the doctor dashboard | ✅ Done |
+| 4 | CT upload, de-identification, case timeline and notifications (stub analysis) | ✅ This version |
+| 5–7 | AI inference with a demo model, training toolkit, reports | Planned |
 | 8–12 | Model training on the real dataset, integration, optional extras, final release | Planned |
 
 The full plan, requirements and phase prompts are in the scope document:
@@ -52,6 +53,20 @@ Then open **http://localhost:8080**. The first `make up` downloads and builds ev
 - Doctors land on the **Dashboard** and manage records under **Patients**. Administrators have
   no access to patient data (they manage accounts and read the audit log).
 - Use made-up patients for demonstrations; never enter real patient data in a test system.
+
+### Trying a scan upload
+
+1. `make demo-scan` writes two synthetic scans (no real patient) to `demo-data/`:
+   `synthetic_chest_ct.zip`, which is accepted, and `synthetic_too_few_slices.zip`, which is
+   refused with the reason shown.
+2. Sign in as the demo doctor, add a made-up patient, then click **Upload CT** (on the
+   dashboard or the patient's page) and choose the file.
+3. The case page shows the status timeline. Until Phase 5 the analysis is a **stub**: it ends
+   with the placeholder result "STUB" and performs no AI analysis. The bell in the header shows
+   the notification, and the dashboard counts update.
+
+Uploaded scans are checked (CT, axial, at least 50 slices, slices at most 5 mm apart) and
+de-identified before they are stored.
 - Accounts lock for 15 minutes after 5 wrong passwords; the web app signs out after 30 minutes
   without activity, and every session ends after 8 hours.
 
@@ -61,6 +76,7 @@ Then open **http://localhost:8080**. The first `make up` downloads and builds ev
 | `make down` | Stop every service (data is kept) |
 | `make ps` / `make logs` | Show service status / follow logs |
 | `make seed` | Create the demo doctor account |
+| `make demo-scan` | Write synthetic test scans to `demo-data/` for trying uploads |
 | `make fetch-model` | Download the trained model (available from Phase 5) |
 | `make backup` | Save the database and stored files to `backups/<timestamp>/` |
 | `make restore BACKUP=backups/<timestamp>` | Restore a backup (replaces current data) |

@@ -4,7 +4,7 @@ import { admin, mockApi, session } from "../test/api";
 import { makeCase } from "../test/cases";
 import { fakeFile, mockXhr } from "../test/xhr";
 import { setAccessToken } from "./client";
-import { NETWORK_ERROR, uploadScan } from "./cases";
+import { NETWORK_ERROR, TOO_LARGE, uploadScan } from "./cases";
 
 describe("uploadScan", () => {
   it("renews an expired session once and sends the files again", async () => {
@@ -44,6 +44,20 @@ describe("uploadScan", () => {
       uploadScan("p-1", [fakeFile("a.zip")], (fraction) => fractions.push(fraction)),
     ).rejects.toMatchObject({ status: 422, code: "several_zips" });
     expect(fractions).toEqual([0.25]);
+  });
+
+  it("explains nginx's size refusal (an HTML page) in plain words", async () => {
+    setAccessToken("t");
+    mockXhr((request) => {
+      request.status = 413;
+      request.responseText = "<html>413 Request Entity Too Large</html>";
+      request.onload?.();
+    });
+    await expect(uploadScan("p-1", [fakeFile("a.zip")], () => undefined)).rejects.toMatchObject({
+      status: 413,
+      message: TOO_LARGE,
+      code: "upload_too_large",
+    });
   });
 
   it("explains a network failure and survives a non-JSON error page", async () => {
