@@ -3,6 +3,45 @@
 All notable changes to CaviNet are recorded here, one section per phase.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.0] Phase 03: Patients and doctor dashboard
+
+### Added
+- **Patients (FR-03.1):** full name, hospital MR number (unique; stored trimmed and
+  upper-case, so `mr-1001` and `MR-1001` are the same), date of birth, sex, optional phone and
+  notes. The same rules are checked in the browser and on the server, and each message is shown
+  next to its field.
+- **Patient management (FR-03.2):** doctors create, view, edit and delete patients. Deleting is
+  permanent and must be confirmed by typing the patient's MR number; it removes the patient's
+  folder `DATA_DIR/patients/<id>/`, and the database cascades to the scans, results and reports
+  that later phases attach to the patient.
+- **Patient list (FR-03.3):** search by part of the name or MR number (any case), sort by name,
+  MR number, date of birth, date added or last update, 20 per page. Search, sort and page are
+  kept in the address, so Back and shared links work.
+- **Patient page (FR-03.4):** demographics, Edit and Delete, and a Scans section (empty until
+  Phase 4) with the Upload CT button.
+- **Doctor dashboard (FR-02.1 to FR-02.3):** doctors now land on a dashboard with the five counts
+  (total patients; scan and case counts stay 0 until Phase 4), a recent-cases table (empty until
+  Phase 4), a patient search box and an **Upload CT** button that is visible but disabled with
+  the tooltip "Available in a later phase". Navigation for doctors: Dashboard, Patients.
+- **Doctor only (section 9.3):** every patient and dashboard endpoint answers 403 to admins, and
+  the web app shows them "No access". Admins keep Home, Users and Audit log.
+- **Audit (FR-09.2):** patient created, edited (with the names of the changed fields) and deleted.
+  Entries identify the patient by record id only, never by name or MR number.
+- API: `GET/POST /api/patients`, `GET/PATCH/DELETE /api/patients/{id}` (`DELETE` needs
+  `?confirm=<MR number>`), `GET /api/dashboard/stats`, `GET /api/dashboard/recent-cases`.
+- Alembic migration `0003` (patients).
+
+### Changed
+- Privacy (NFR-3): the backend and nginx access logs no longer record query strings, because
+  patient searches put names and MR numbers in the address.
+- SQLite (used by the tests) now enforces foreign keys, so cascade deletes behave as on
+  PostgreSQL.
+- Alembic keeps the application's loggers when migrations run inside the test process.
+- Version 0.3.0.
+
+### Upgrade notes
+- Run `make up`: the backend applies migration `0003` on start. No `.env` changes.
+
 ## [0.2.0] Phase 02: Accounts, roles and administration
 
 ### Added

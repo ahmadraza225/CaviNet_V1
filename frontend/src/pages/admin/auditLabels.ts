@@ -10,6 +10,21 @@ export const ACTION_LABELS: Record<string, string> = {
   user_deactivated: "User deactivated",
   user_reactivated: "User reactivated",
   password_reset: "Password reset by admin",
+  patient_created: "Patient created",
+  patient_updated: "Patient edited",
+  patient_deleted: "Patient deleted",
 };
 
 export const actionLabel = (action: string) => ACTION_LABELS[action] ?? action;
+
+/** Audit entries name patients by record id only (NFR-3); admins never see patient identity. */
+export function targetLabel(entry: {
+  target_type: string | null;
+  target_id: string | null;
+  details: Record<string, unknown> | null;
+}): string {
+  if (entry.target_type === "patient" && entry.target_id) {
+    return `Patient record ${entry.target_id.slice(0, 8)}`;
+  }
+  return String(entry.details?.target_email ?? "—");
+}

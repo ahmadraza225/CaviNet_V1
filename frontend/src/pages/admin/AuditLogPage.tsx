@@ -3,7 +3,7 @@ import { useState, type FormEvent } from "react";
 
 import { listAuditActions, listAuditLogs, listUsers, type AuditFilters } from "../../api/admin";
 import { Alert, Button, SelectField, TextField } from "../../components/ui";
-import { actionLabel } from "./auditLabels";
+import { actionLabel, targetLabel } from "./auditLabels";
 
 const PAGE_SIZE = 25;
 const EMPTY_FILTERS: AuditFilters = { userId: "", action: "", dateFrom: "", dateTo: "" };
@@ -12,7 +12,12 @@ function describeDetails(details: Record<string, unknown> | null): string {
   if (!details) return "";
   return Object.entries(details)
     .filter(([key]) => key !== "target_email")
-    .map(([key, value]) => `${key.replace(/_/g, " ")}: ${String(value)}`)
+    .map(([key, value]) => {
+      const shown = Array.isArray(value)
+        ? value.map((item) => String(item).replace(/_/g, " ")).join(", ")
+        : String(value);
+      return `${key.replace(/_/g, " ")}: ${shown}`;
+    })
     .join(", ");
 }
 
@@ -127,7 +132,9 @@ export function AuditLogPage() {
                   </td>
                   <td className="px-3 py-2">{entry.actor_email ?? "—"}</td>
                   <td className="px-3 py-2 font-medium">{actionLabel(entry.action)}</td>
-                  <td className="px-3 py-2">{String(entry.details?.target_email ?? "—")}</td>
+                  <td className="px-3 py-2" title={entry.target_id ?? undefined}>
+                    {targetLabel(entry)}
+                  </td>
                   <td className="px-3 py-2 text-slate-600">{describeDetails(entry.details)}</td>
                   <td className="px-3 py-2 text-slate-500">{entry.ip_address ?? "—"}</td>
                 </tr>

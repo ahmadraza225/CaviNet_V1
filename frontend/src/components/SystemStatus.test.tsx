@@ -18,7 +18,7 @@ describe("System status card", () => {
     expect(await screen.findByText("All systems operational")).toBeInTheDocument();
     expect(statusOf("Database").getByText("Working")).toBeInTheDocument();
     expect(statusOf("Job queue").getByText("Working")).toBeInTheDocument();
-    expect(screen.getByText("Version 0.2.0")).toBeInTheDocument();
+    expect(screen.getByText("Version 0.3.0")).toBeInTheDocument();
   });
 
   it("shows which component failed when the API reports degraded (HTTP 503)", async () => {
@@ -26,7 +26,7 @@ describe("System status card", () => {
       ...signedInAs(doctor),
       "GET /api/health": {
         status: 503,
-        body: { status: "degraded", version: "0.2.0", database: "error", redis: "ok" },
+        body: { status: "degraded", version: "0.3.0", database: "error", redis: "ok" },
       },
     });
     renderRoute("/");

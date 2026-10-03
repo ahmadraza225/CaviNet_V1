@@ -20,7 +20,7 @@ export function Layout() {
               <nav aria-label="Main navigation" className="flex gap-6 text-sm">
                 {items.map((item) => (
                   <NavLink
-                    key={item.to}
+                    key={item.label}
                     to={item.to}
                     end={item.to === "/"}
                     className={({ isActive }) =>
