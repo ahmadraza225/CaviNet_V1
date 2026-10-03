@@ -17,12 +17,14 @@ export interface Patient {
   updated_at: string;
 }
 
-/** One scan in the patient's history (FR-03.4); scans arrive in a later phase. */
+/** One scan in the patient's history (FR-03.4). */
 export interface ScanSummary {
   id: string;
   uploaded_at: string;
   status: string;
   result: string | null;
+  /** FR-05.6: the result came from the demo model. */
+  result_is_demo: boolean;
 }
 
 export interface PatientDetail extends Patient {

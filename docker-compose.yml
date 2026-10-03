@@ -5,6 +5,8 @@ x-backend: &backend
   build:
     context: .
     dockerfile: backend/Dockerfile
+    args:
+      TORCH_INDEX_URL: ${TORCH_INDEX_URL:-https://download.pytorch.org/whl/cpu}
   image: cavinet-backend:local
   restart: unless-stopped
   env_file: .env
@@ -14,6 +16,8 @@ x-backend: &backend
     DATA_DIR: /data
   volumes:
     - app_data:/data
+    # The AI model bundle from `make fetch-model` (section 11.6).
+    - ./models:/models
   depends_on:
     postgres:
       condition: service_healthy

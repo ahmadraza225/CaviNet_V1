@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 
 import { ApiError } from "../../api/client";
 import { deletePatient, getPatient, type PatientDetail } from "../../api/patients";
+import { ResultLabel } from "../../components/ResultLabel";
 import { StatusBadge } from "../../components/StatusBadge";
 import { Alert, Button } from "../../components/ui";
 import { UploadCtButton } from "../../components/UploadCtButton";
@@ -138,7 +139,9 @@ function ScanHistory({ patient }: { patient: PatientDetail }) {
                 <td className="px-3 py-2">
                   <StatusBadge status={scan.status} />
                 </td>
-                <td className="px-3 py-2">{scan.result ?? "—"}</td>
+                <td className="px-3 py-2">
+                  <ResultLabel result={scan.result} isDemo={scan.result_is_demo} />
+                </td>
                 <td className="px-3 py-2 text-right">
                   <Link
                     to={`/cases/${scan.id}`}

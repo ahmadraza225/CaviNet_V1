@@ -125,11 +125,12 @@ interface RequestOptions {
   auth?: boolean;
 }
 
-export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
+/** Send a request with the access token, renewing it once on 401; throws ApiError. */
+async function request(path: string, options: RequestOptions, accept: string): Promise<Response> {
   const { method = "GET", body, auth = true } = options;
 
   const send = () => {
-    const headers: Record<string, string> = { Accept: "application/json" };
+    const headers: Record<string, string> = { Accept: accept };
     if (body !== undefined) headers["Content-Type"] = "application/json";
     if (auth && accessToken) headers.Authorization = `Bearer ${accessToken}`;
     return fetch(path, {
@@ -152,8 +153,18 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
   if (!response.ok) {
     throw await toApiError(response);
   }
+  return response;
+}
+
+export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const response = await request(path, options, "application/json");
   if (response.status === 204) {
     return undefined as T;
   }
   return (await response.json()) as T;
+}
+
+/** A binary response (e.g. a preview image) for an endpoint that needs the access token. */
+export async function apiFetchBlob(path: string): Promise<Blob> {
+  return (await request(path, {}, "*/*")).blob();
 }

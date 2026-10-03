@@ -1,4 +1,11 @@
-import { apiErrorFromBody, apiFetch, ApiError, getAccessToken, refreshSession } from "./client";
+import {
+  apiErrorFromBody,
+  apiFetch,
+  apiFetchBlob,
+  ApiError,
+  getAccessToken,
+  refreshSession,
+} from "./client";
 
 export type CaseStatus =
   "uploaded" | "validating" | "queued" | "preprocessing" | "analysing" | "completed" | "failed";
@@ -27,8 +34,50 @@ export interface ScanDetails {
 export interface CaseResult {
   label: string;
   is_stub: boolean;
+  is_demo: boolean;
   analyser: string | null;
   note: string | null;
+  probability_tb_pct: number | null;
+  confidence_pct: number | null;
+  band: string | null;
+}
+
+export type ConfidenceBand = "High" | "Moderate" | "Low";
+
+/** FR-06.1 to FR-06.4 for a completed case (GET /api/cases/{id}/result). */
+export interface AiResult {
+  case_id: string;
+  patient: { id: string; full_name: string; mr_number: string };
+  predicted_class: "TB" | "NTM";
+  probability_tb: number;
+  probability_tb_pct: number;
+  confidence_pct: number;
+  band: ConfidenceBand;
+  inconclusive: boolean;
+  explanation: string;
+  disclaimer: string;
+  is_demo: boolean;
+  demo_banner: string | null;
+  model: {
+    name: string;
+    version: string;
+    trained_at: string | null;
+    folds: number | null;
+    is_demo: boolean;
+  };
+  validated_performance: {
+    auc: number | null;
+    sensitivity: number | null;
+    specificity: number | null;
+    cases: number | null;
+    dataset: string | null;
+  };
+  warnings: string[];
+  processing_seconds: number | null;
+  step_seconds: Record<string, number>;
+  lung_volume_ml: number | null;
+  preview_count: number;
+  completed_at: string | null;
 }
 
 export interface CaseDetail {
@@ -46,6 +95,13 @@ export interface CaseDetail {
 }
 
 export const getCase = (id: string) => apiFetch<CaseDetail>(`/api/cases/${id}`);
+
+export const getResult = (id: string) => apiFetch<AiResult>(`/api/cases/${id}/result`);
+
+/** FR-06.4: preview slice `index` (0 = nearest the head) as an object URL for <img>. */
+export async function getPreviewUrl(id: string, index: number): Promise<string> {
+  return URL.createObjectURL(await apiFetchBlob(`/api/cases/${id}/previews/${index}`));
+}
 
 export const NETWORK_ERROR =
   "The upload failed because the connection was lost. Check the connection and try again.";
