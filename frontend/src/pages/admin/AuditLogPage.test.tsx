@@ -41,6 +41,39 @@ function setup(total = 2) {
 }
 
 describe("Admin Audit Log page (FR-09.3)", () => {
+  it("shows patient actions by record id only, never the patient's identity (NFR-3)", async () => {
+    mockApi({
+      ...signedInAs(admin),
+      "GET /api/admin/users": { body: [admin, doctor] },
+      "GET /api/admin/audit-logs/actions": { body: ["patient_updated"] },
+      "GET /api/admin/audit-logs": {
+        body: {
+          items: [
+            {
+              id: 3,
+              created_at: "2026-10-03T11:00:00Z",
+              user_id: doctor.id,
+              actor_email: doctor.email,
+              action: "patient_updated",
+              target_type: "patient",
+              target_id: "3f2a9c1e-0000-4000-8000-000000000001",
+              details: { fields: ["full_name", "date_of_birth"] },
+              ip_address: "10.0.0.7",
+            },
+          ],
+          total: 1,
+          page: 1,
+          page_size: 25,
+        },
+      },
+    });
+    renderRoute("/admin/audit-log");
+
+    expect(await screen.findByText("Patient edited", { selector: "td" })).toBeInTheDocument();
+    expect(screen.getByText("Patient record 3f2a9c1e")).toBeInTheDocument();
+    expect(screen.getByText("fields: full name, date of birth")).toBeInTheDocument();
+  });
+
   it("lists entries in plain language", async () => {
     setup();
     renderRoute("/admin/audit-log");

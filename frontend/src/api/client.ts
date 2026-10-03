@@ -11,6 +11,8 @@ export class ApiError extends Error {
     public readonly status: number,
     message: string,
     public readonly code?: string,
+    /** Validation messages by request field, e.g. { mr_number: "MR number is required." }. */
+    public readonly fields: Record<string, string> = {},
   ) {
     super(message);
     this.name = "ApiError";
@@ -56,21 +58,28 @@ export function onSessionExpired(handler: (() => void) | null): void {
 async function toApiError(response: Response): Promise<ApiError> {
   let message = `Request failed (HTTP ${response.status}).`;
   let code: string | undefined;
+  const fields: Record<string, string> = {};
   try {
     const body = await response.json();
     code = typeof body.code === "string" ? body.code : undefined;
     if (typeof body.detail === "string") {
       message = body.detail;
     } else if (Array.isArray(body.detail) && body.detail.length > 0) {
-      // FastAPI validation errors: [{ loc, msg, type }, ...]
-      message = body.detail
-        .map((item: { msg?: string }) => String(item.msg ?? "").replace(/^Value error, /, ""))
-        .join(" ");
+      // FastAPI validation errors: [{ loc: ["body", "<field>"], msg, type }, ...]
+      const items = body.detail as { loc?: unknown[]; msg?: string }[];
+      const messages = items.map((item) => String(item.msg ?? "").replace(/^Value error, /, ""));
+      items.forEach((item, index) => {
+        const loc = Array.isArray(item.loc) ? item.loc : [];
+        if (loc[0] === "body" && loc.length === 2 && !(String(loc[1]) in fields)) {
+          fields[String(loc[1])] = messages[index];
+        }
+      });
+      message = messages.join(" ");
     }
   } catch {
     // Non-JSON error body: keep the generic message.
   }
-  return new ApiError(response.status, message, code);
+  return new ApiError(response.status, message, code, fields);
 }
 
 /** Exchange the refresh cookie for a new access token. Concurrent callers share one request. */

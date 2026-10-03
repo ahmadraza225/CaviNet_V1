@@ -4,6 +4,7 @@ import { useAuth } from "../auth/context";
 import { SystemStatus } from "../components/SystemStatus";
 import { Alert } from "../components/ui";
 
+/** Administrator home page. Doctors get the dashboard instead (see IndexPage). */
 export function HomePage() {
   const { user } = useAuth();
   const notice = (useLocation().state as { notice?: string } | null)?.notice;
@@ -21,9 +22,8 @@ export function HomePage() {
             confidence score.
           </p>
           <p className="mt-3 text-slate-700">
-            {user?.role === "admin"
-              ? "Use Users to manage accounts and Audit log to review activity."
-              : "Patient records, scan upload and AI results are added in the next phases."}
+            Use Users to manage accounts and Audit log to review activity. Administrators have no
+            access to patient records.
           </p>
         </section>
         <SystemStatus />
