@@ -1,7 +1,6 @@
 import { fireEvent, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { LATER_PHASE } from "../../navigation";
 import { doctor, mockApi, signedInAs } from "../../test/api";
 import { makePatient, patientPage } from "../../test/patients";
 import { renderRoute } from "../../test/render";
@@ -39,7 +38,7 @@ describe("Patient detail page (FR-03.2, FR-03.4)", () => {
     );
   });
 
-  it("has an empty Scans section with a disabled Upload CT button", async () => {
+  it("has an empty Scans section with an Upload CT link for this patient", async () => {
     setup();
     renderRoute("/patients/p-1");
 
@@ -47,10 +46,10 @@ describe("Patient detail page (FR-03.2, FR-03.4)", () => {
     expect(
       within(scans).getByText("No scans have been uploaded for this patient."),
     ).toBeInTheDocument();
-    const upload = within(scans).getByRole("button", { name: "Upload CT" });
-    expect(upload).toBeDisabled();
-    expect(upload).toHaveAccessibleDescription(LATER_PHASE);
-    expect(upload.closest("[title]")).toHaveAttribute("title", LATER_PHASE);
+    expect(within(scans).getByRole("link", { name: "Upload CT" })).toHaveAttribute(
+      "href",
+      "/patients/p-1/upload",
+    );
   });
 
   it("lists scans with date, status and result once they exist", async () => {
@@ -58,7 +57,8 @@ describe("Patient detail page (FR-03.2, FR-03.4)", () => {
       "GET /api/patients/p-1": {
         body: makePatient({
           scans: [
-            { id: "s-1", uploaded_at: "2026-10-03T08:00:00Z", status: "completed", result: "NTM" },
+            { id: "c-2", uploaded_at: "2026-10-03T09:00:00Z", status: "failed", result: null },
+            { id: "c-1", uploaded_at: "2026-10-03T08:00:00Z", status: "completed", result: "STUB" },
           ],
         }),
       },
@@ -66,8 +66,15 @@ describe("Patient detail page (FR-03.2, FR-03.4)", () => {
     renderRoute("/patients/p-1");
 
     const scans = await screen.findByRole("region", { name: "Scans" });
-    expect(await within(scans).findByText("completed")).toBeInTheDocument();
-    expect(within(scans).getByText("NTM")).toBeInTheDocument();
+    const rows = await within(scans).findAllByRole("row");
+    expect(rows).toHaveLength(3);
+    expect(within(rows[1]).getByText("Failed")).toBeInTheDocument();
+    expect(within(rows[2]).getByText("Completed")).toBeInTheDocument();
+    expect(within(rows[2]).getByText("STUB")).toBeInTheDocument();
+    expect(within(rows[2]).getByRole("link", { name: /Open the case/ })).toHaveAttribute(
+      "href",
+      "/cases/c-1",
+    );
   });
 
   it("explains when the patient does not exist", async () => {

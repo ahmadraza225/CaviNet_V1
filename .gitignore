@@ -20,6 +20,7 @@ frontend/coverage/
 # Runtime data, backups and model files (never committed)
 data/
 backups/
+demo-data/
 models/*
 !models/.gitkeep
 !models/README.md
