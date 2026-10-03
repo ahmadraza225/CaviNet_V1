@@ -39,7 +39,7 @@ describe("Sign-in (FR-01.1, FR-01.2)", () => {
     expect(screen.getByText("Doctor")).toBeInTheDocument();
   });
 
-  it("shows the admin navigation (users and audit log, no patient menu) to admins", async () => {
+  it("shows the admin navigation (users, audit log and model; no patient menu) to admins", async () => {
     mockApi({ ...signedOut(), "POST /api/auth/login": { body: session(admin) } });
     renderRoute("/");
     await screen.findByRole("heading", { name: "Sign in" });
@@ -47,7 +47,7 @@ describe("Sign-in (FR-01.1, FR-01.2)", () => {
     signIn("admin@example.org", "Passw0rd123");
 
     await screen.findByRole("heading", { name: "Welcome, Ada Admin" });
-    expect(navLinks()).toEqual(["Home", "Users", "Audit log"]);
+    expect(navLinks()).toEqual(["Home", "Users", "Audit log", "Model"]);
     expect(navLinks()).not.toContain("Patients");
   });
 

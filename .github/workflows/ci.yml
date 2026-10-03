@@ -46,7 +46,9 @@ jobs:
             backend/pyproject.toml
             ml/pyproject.toml
       - name: Install
-        run: pip install -e ./ml -e "./backend[dev]"
+        run: |
+          pip install --index-url https://download.pytorch.org/whl/cpu "torch>=2.3,<3"
+          pip install -e ./ml -e "./backend[dev]"
       - name: Lint
         run: |
           ruff check backend scripts
@@ -66,7 +68,22 @@ jobs:
           cache: pip
           cache-dependency-path: ml/pyproject.toml
       - name: Install
-        run: pip install -e "./ml[dev]"
+        run: |
+          pip install --index-url https://download.pytorch.org/whl/cpu "torch>=2.3,<3"
+          pip install -e "./ml[dev]"
+      - name: Cache the lungmask R231 weights
+        uses: actions/cache@v4
+        with:
+          path: ~/lungmask
+          key: lungmask-r231-d5d2fc3d
+      - name: Download the lungmask R231 weights (for the real segmenter test)
+        run: |
+          mkdir -p ~/lungmask
+          f=~/lungmask/unet_r231-d5d2fc3d.pth
+          [ -f "$f" ] || curl -fsSL -o "$f" \
+            https://github.com/JoHof/lungmask/releases/download/v0.0/unet_r231-d5d2fc3d.pth
+          echo "d5d2fc3df432115933491f115b283e94d1f5c841c0e82f6e7bd2d65d3ccde69f  $f" | sha256sum -c
+          echo "LUNGMASK_WEIGHTS=$f" >> "$GITHUB_ENV"
       - name: Lint
         run: |
           ruff check ml
@@ -154,7 +171,7 @@ jobs:
           if docker compose logs backend frontend 2>&1 | grep -i -e testpatient -e ci-0001; then
             echo "Patient identifiers found in the service logs"; exit 1
           fi
-      - name: The doctor uploads a synthetic scan and the stub analysis completes (FR-04, FR-08)
+      - name: The doctor uploads a synthetic scan and the AI analysis completes (FR-04, M-05, M-06)
         run: |
           set -a; source .env; set +a
           api=http://localhost:8080/api
@@ -173,7 +190,7 @@ jobs:
             "$api/patients/$patient/cases" > "$tmp/case.json"
           test "$(field '["status"]' < "$tmp/case.json")" = queued
           case_id=$(field '["id"]' < "$tmp/case.json")
-          for _ in $(seq 1 45); do
+          for _ in $(seq 1 120); do
             status=$(curl -fsS -H "$auth" "$api/cases/$case_id" | field '["status"]')
             [ "$status" = completed ] && break
             sleep 2
@@ -181,7 +198,15 @@ jobs:
           echo "final status: $status"
           curl -fsS -H "$auth" "$api/cases/$case_id" | tee "$tmp/done.json"
           test "$status" = completed
-          test "$(field '["result"]["label"]' < "$tmp/done.json")" = STUB
+          label=$(field '["result"]["label"]' < "$tmp/done.json")
+          [ "$label" = TB ] || [ "$label" = NTM ]
+          test "$(field '["result"]["is_demo"]' < "$tmp/done.json")" = True
+          curl -fsS -H "$auth" "$api/cases/$case_id/result" | tee "$tmp/result.json"
+          test "$(field '["demo_banner"]' < "$tmp/result.json")" = "DEMO MODEL: NOT FOR CLINICAL USE"
+          test "$(field '["preview_count"]' < "$tmp/result.json")" = 48
+          curl -fsS -H "$auth" -o "$tmp/preview.png" "$api/cases/$case_id/previews/24"
+          file "$tmp/preview.png" | grep -q "PNG image"
+          curl -fsS -H "$auth" $api/model/status | grep -q '"is_demo":true'
           curl -fsS -H "$auth" $api/notifications/unread-count | grep -q '"count":1'
           curl -fsS -H "$auth" $api/dashboard/stats | grep -q '"completed_cases":1'
           # A scan with too few slices is refused with the documented reason.
@@ -201,6 +226,8 @@ jobs:
             "$api/patients/$patient?confirm=CI-0002")
           test "$code" = 204
           docker compose exec -T backend sh -c "[ ! -e /data/cases/$case_id ]"
+      - name: Time the analysis of a synthetic 300-slice scan on the CI CPU (NFR-1)
+        run: docker compose exec -T worker python -m app.benchmark --slices 300
       - name: Show service logs
         if: failure()
         run: docker compose logs

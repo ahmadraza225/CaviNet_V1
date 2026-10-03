@@ -15,6 +15,8 @@ export interface RecentCase {
   uploaded_at: string;
   status: string;
   result: string | null;
+  /** FR-05.6: the result came from the demo model. */
+  result_is_demo: boolean;
 }
 
 export const getDashboardStats = () => apiFetch<DashboardStats>("/api/dashboard/stats");

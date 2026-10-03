@@ -19,8 +19,9 @@ Final Year Project, Department of Computer Science, Air University Islamabad (20
 | 1 | Foundation: repository, Docker, CI, app shells | ✅ Done |
 | 2 | Accounts, roles, admin users page and audit log | ✅ Done |
 | 3 | Patients and the doctor dashboard | ✅ Done |
-| 4 | CT upload, de-identification, case timeline and notifications (stub analysis) | ✅ This version |
-| 5–7 | AI inference with a demo model, training toolkit, reports | Planned |
+| 4 | CT upload, de-identification, case timeline and notifications | ✅ Done |
+| 5 | AI inference engine and results (with a **demo model** until training is done) | ✅ This version |
+| 6–7 | Training toolkit, PDF reports | Planned |
 | 8–12 | Model training on the real dataset, integration, optional extras, final release | Planned |
 
 The full plan, requirements and phase prompts are in the scope document:
@@ -29,8 +30,15 @@ The full plan, requirements and phase prompts are in the scope document:
 
 ## Quick start (run the system)
 
-**You need:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) (on Windows,
-with WSL2) and `make` (built into macOS/Linux; on Windows run the commands inside WSL).
+**You need:**
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/). On a Mac choose the
+  version for your chip (Apple silicon for M1/M2/M3/M4); on Windows use WSL2.
+- `git` and `make`:
+  - Mac: run `xcode-select --install` once in Terminal.
+  - Linux: usually already installed.
+  - Windows: run the commands inside WSL.
+- About 10 GB of free disk space. Nothing else is needed: Python, Node.js and the AI libraries
+  all run inside Docker.
 
 ```bash
 git clone https://github.com/ahmadraza225/CaviNet_V1.git
@@ -38,8 +46,15 @@ cd CaviNet_V1
 make up
 ```
 
-Then open **http://localhost:8080**. The first `make up` downloads and builds everything
-(a few minutes); later starts take seconds.
+Then open **http://localhost:8080**.
+
+The first `make up` downloads and builds everything, including the AI libraries, and trains
+the small demo model. This takes several minutes; later starts take seconds.
+
+The repository is private. If `git clone` asks for a password, the easiest route is
+[GitHub Desktop](https://desktop.github.com/): sign in, choose **Clone repository**, pick
+`CaviNet_V1`, then run `make up` in a terminal opened in that folder. Later, **Fetch origin**
+then **Pull** in GitHub Desktop gets new versions; run `make up` again after each update.
 
 ### Signing in
 
@@ -61,12 +76,32 @@ Then open **http://localhost:8080**. The first `make up` downloads and builds ev
    refused with the reason shown.
 2. Sign in as the demo doctor, add a made-up patient, then click **Upload CT** (on the
    dashboard or the patient's page) and choose the file.
-3. The case page shows the status timeline. Until Phase 5 the analysis is a **stub**: it ends
-   with the placeholder result "STUB" and performs no AI analysis. The bell in the header shows
-   the notification, and the dashboard counts update.
+3. The case page shows the status timeline while the AI pipeline runs (about a minute for the
+   synthetic scan). It then shows the result:
+   - TB or NTM, the probability of TB, and the confidence with its band (High, Moderate, or Low
+     = Inconclusive);
+   - an explanation in plain language and the disclaimer;
+   - the model's validated performance;
+   - a slice viewer.
+
+   The bell in the header shows the notification, and the dashboard counts update.
 
 Uploaded scans are checked (CT, axial, at least 50 slices, slices at most 5 mm apart) and
 de-identified before they are stored.
+
+### The AI model and the DEMO banner
+
+- Until the real model is trained (Phase 8), CaviNet uses a **demo model** trained in about a
+  minute on synthetic volumes. Its results say nothing about real patients.
+- While it is installed, every screen shows **"DEMO MODEL: NOT FOR CLINICAL USE"**, and demo
+  results carry a **Demo** badge.
+- `make up` installs the demo model automatically when `models/` has no model.
+- Once the trained model is published, set `MODEL_URL` (and `MODEL_SHA256`) in `.env`, then run
+  `make fetch-model FORCE=1` and `make up`.
+- Administrators see the installed model under **Model**: version, training date, demo or
+  trained, and test results.
+- `make benchmark` times the analysis of a synthetic 300-slice scan on this computer. The
+  target is under 3 minutes (NFR-1).
 - Accounts lock for 15 minutes after 5 wrong passwords; the web app signs out after 30 minutes
   without activity, and every session ends after 8 hours.
 
@@ -77,7 +112,8 @@ de-identified before they are stored.
 | `make ps` / `make logs` | Show service status / follow logs |
 | `make seed` | Create the demo doctor account |
 | `make demo-scan` | Write synthetic test scans to `demo-data/` for trying uploads |
-| `make fetch-model` | Download the trained model (available from Phase 5) |
+| `make fetch-model` | Download the model named by `MODEL_URL` in `.env`, or build the demo model (`FORCE=1` replaces an installed model) |
+| `make benchmark` | Time the analysis of a synthetic 300-slice scan (needs `make up`) |
 | `make backup` | Save the database and stored files to `backups/<timestamp>/` |
 | `make restore BACKUP=backups/<timestamp>` | Restore a backup (replaces current data) |
 
@@ -87,7 +123,8 @@ if CaviNet is ever served over HTTPS, set `COOKIE_SECURE=true`.
 
 ## Development
 
-**You need:** Python 3.11+, Node.js 20+, and Docker for the full stack.
+**You need:** Python 3.11+, Node.js 20+, and Docker for the full stack. Only needed to change
+the code; running CaviNet needs just Docker.
 
 ```bash
 make install   # .venv with backend + ml dev dependencies, frontend packages
@@ -108,7 +145,7 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the phase-by-phase Git workflow.
 |---|---|---|
 | `frontend` | React 18 + TypeScript + Vite + Tailwind, served by nginx | Web app on port 8080; proxies `/api` to the backend |
 | `backend` | Python 3.11, FastAPI, SQLAlchemy 2, Alembic | REST API (`/api/...`, docs at `/api/docs`) |
-| `worker` | RQ (same image as the backend) | Background analysis jobs |
+| `worker` | RQ (same image as the backend) with the `cavinet_ml` AI pipeline: PyTorch, MONAI, SimpleITK, lungmask | Background analysis: preprocessing, previews, model ensemble |
 | `postgres` | PostgreSQL 16 | Database |
 | `redis` | Redis 7 | Job queue |
 
