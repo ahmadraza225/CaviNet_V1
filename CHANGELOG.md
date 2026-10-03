@@ -3,6 +3,49 @@
 All notable changes to CaviNet are recorded here, one section per phase.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.0] Phase 02: Accounts, roles and administration
+
+### Added
+- **Sign-in (FR-01.1, FR-01.2):** email + password, Argon2id hashing, password policy (10+
+  characters with a letter and a digit), 30-minute access tokens (JWT, kept in memory by the
+  browser) and an 8-hour refresh token in an httpOnly, SameSite=Strict cookie scoped to
+  `/api/auth`. Refresh tokens rotate on use; reusing a rotated token ends all of that user's
+  sessions. Sign-out revokes the refresh token.
+- **Roles (FR-01.3):** Doctor and Admin. Every endpoint uses a `require_roles(...)` dependency;
+  only `/api/health` and `/api/auth/{login,refresh,logout}` are public. A test discovers every
+  endpoint and fails if one lacks a role check (401 without a token, 403 for the wrong role).
+- **Lockout (FR-01.4):** 5 failed sign-ins lock the account for 15 minutes.
+- **Inactivity sign-out (FR-01.5):** the web app signs out after 30 minutes without interaction.
+- **Temporary passwords (FR-01.6):** admins set temporary passwords; until the user changes it,
+  every endpoint except their own account endpoints answers 403 `password_change_required`.
+  Changing a password ends the user's other sessions and invalidates older access tokens.
+- **First admin (FR-01.7):** created on first start from `ADMIN_EMAIL` / `ADMIN_PASSWORD`, and
+  must change the password at first sign-in.
+- **Administration (FR-09.1):** list, create, rename/assign role, deactivate/reactivate and
+  reset passwords. Admins cannot change their own role or deactivate themselves.
+- **Audit log (FR-09.2, FR-09.3):** sign-in success/failure, account locked, sign-out, password
+  changes and every user-management action, with actor, target, client address and time (never
+  passwords or medical content); filter by user (actor or target), action and date range, with
+  pagination. Request-context middleware supplies the client address.
+- Web app: sign-in page, change-password page, protected routes, role-based navigation (admin:
+  Home, Users, Audit log; doctor: Home), Users page and Audit log page.
+- `make seed` creates the demo doctor (`DEMO_DOCTOR_EMAIL` / `DEMO_DOCTOR_PASSWORD`).
+- `make env` / `make up` generate `.env` with a random `SECRET_KEY`, database password and
+  starting passwords, and add new settings to an existing `.env` without changing old values.
+- Alembic migration `0002` (users, refresh_tokens, audit_logs); a PostgreSQL test checks the
+  migrations match the models (`alembic check`).
+- CI full-stack job now signs in as the generated admin and the seeded doctor and checks the
+  doctor gets 403 from the admin API.
+
+### Changed
+- Backend container trusts nginx's `X-Forwarded-For` (the backend port is not published), so
+  the audit log records the client address.
+- Version 0.2.0.
+
+### Upgrade notes
+- Run `make up` (or `make env`): it adds `SECRET_KEY`, `ADMIN_*`, `DEMO_DOCTOR_*` and
+  `COOKIE_SECURE` to an existing `.env` and prints the first admin's sign-in.
+
 ## [0.1.0] Phase 01: Foundation
 
 ### Added
