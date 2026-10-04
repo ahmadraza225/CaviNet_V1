@@ -20,8 +20,9 @@ Final Year Project, Department of Computer Science, Air University Islamabad (20
 | 2 | Accounts, roles, admin users page and audit log | ✅ Done |
 | 3 | Patients and the doctor dashboard | ✅ Done |
 | 4 | CT upload, de-identification, case timeline and notifications | ✅ Done |
-| 5 | AI inference engine and results (with a **demo model** until training is done) | ✅ This version |
-| 6–7 | Training toolkit, PDF reports | Planned |
+| 5 | AI inference engine and results (with a **demo model** until training is done) | ✅ Done |
+| 6 | Training and evaluation toolkit (`cavinet-ml`), tested end to end on synthetic data | ✅ This version |
+| 7 | PDF reports, end-to-end tests, user and developer documentation | Planned |
 | 8–12 | Model training on the real dataset, integration, optional extras, final release | Planned |
 
 The full plan, requirements and phase prompts are in the scope document:
@@ -121,13 +122,38 @@ de-identified before they are stored.
 to an existing `.env`). Keep `.env` private. To use a different port, set `CAVINET_HTTP_PORT`;
 if CaviNet is ever served over HTTPS, set `COOKIE_SECURE=true`.
 
+## Training the model (GPU computer)
+
+The training toolkit is the `cavinet-ml` command (module M-10). It runs on the team's GPU
+computer, reads the Kaggle dataset zip directly and produces the model file the application
+uses. **Follow [`docs/TRAINING_RUNBOOK.md`](docs/TRAINING_RUNBOOK.md)**: setup, Kaggle token,
+download, every command in order, expected times, troubleshooting and publishing the model.
+
+| Step | Command |
+|---|---|
+| Install (GPU computer) | `make install-train TORCH_INDEX_URL=https://download.pytorch.org/whl/cu124` |
+| Rehearse everything on synthetic data | `make rehearsal` (about 2 minutes on a CPU, 5 on a GPU) |
+| 1. Index the dataset | `cavinet-ml index --data dicom-dataset.zip` → `work/manifest.csv` |
+| 2. Preprocess (section 11.1) | `cavinet-ml preprocess --workers 4` → cache + QC report (resumable) |
+| 3. Locked split | `cavinet-ml split` → `ml/splits.json` (committed) |
+| 4. Train | `cavinet-ml train --fold 0` … `--fold 4` (resumes automatically) |
+| 5. Calibrate | `cavinet-ml calibrate` |
+| 6. Baselines | `cavinet-ml baseline`, `cavinet-ml shortcut-check`, `cavinet-ml compare` |
+| 7. Cross-validation report | `cavinet-ml evaluate --split dev` |
+| 8. Export (freezes the model) | `cavinet-ml export` → `cavinet_model.pth` + `docs/MODEL_CARD.md` |
+| 9. Locked test set, **once** | `cavinet-ml evaluate --split test` → `docs/EVALUATION_REPORT.md` |
+
+The training settings are in [`ml/configs/train.yaml`](ml/configs/train.yaml) (every value
+of section 11.4). Everything the toolkit writes goes to `work/` (git-ignored), except
+`ml/splits.json` and the reports in `docs/`.
+
 ## Development
 
 **You need:** Python 3.11+, Node.js 20+, and Docker for the full stack. Only needed to change
 the code; running CaviNet needs just Docker.
 
 ```bash
-make install   # .venv with backend + ml dev dependencies, frontend packages
+make install   # .venv with backend + ml dev and training dependencies, frontend packages
 make test      # all automated tests
 make lint      # all linters and format checks
 make format    # auto-format code

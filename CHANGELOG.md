@@ -3,6 +3,94 @@
 All notable changes to CaviNet are recorded here, one section per phase.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.6.0] Phase 06: Training and evaluation toolkit
+
+### Added
+- **Training toolkit (M-10, FR-10.1 to FR-10.8): the `cavinet-ml` commands**, run from the
+  repository root on the GPU computer. Everything they write goes to `work/` (git-ignored),
+  except `ml/splits.json` and the reports in `docs/`.
+  - `index` (FR-10.1): reads the Kaggle zip or its folder plus `PatientIndex.xlsx` and writes
+    `work/manifest.csv`: case ID, label (from the folder, cross-checked with the sheet), age,
+    sex, the 12 symptoms, slices, slice thickness and spacing, manufacturer, kernel, compression
+    and notes. Only DICOM headers are read; nothing is extracted. Patient folders are found by
+    name (`TB/TB_xxx`, `NTM/Case_xxx`); the series with the most slices is described.
+  - `PatientIndex.xlsx` parser: finds the header row, ignores legend rows ("Gender 1:Male
+    2:Female"), reads blank or space-only cells as absent, and reports rather than guesses
+    patients listed twice with different values.
+  - `preprocess` (FR-10.2): section 11.1 with the Phase 5 code, one patient at a time (only
+    that patient's files leave the zip), in parallel worker processes, with lungmask on the GPU
+    when there is one. Output: float16 volumes in `work/cache/`, a QC report (status, failure
+    reason, fallback warnings, lung volume, crop size, input mean) and a QC image per patient.
+    Resumable: re-running skips finished patients (`--retry-failed` for failures). A cache made
+    with other section 11.1 parameters is refused.
+  - `split` (FR-10.3, section 11.3): locked 20% test set and 5 folds, stratified by label ×
+    sex × age band × manufacturer, seed 42; largest-remainder allocation gives exactly 20% and
+    proportional strata. Writes `ml/splits.json` (case IDs only) and refuses to overwrite it.
+  - `train --fold k` (FR-10.4, section 11.4), configured by `ml/configs/train.yaml` (every
+    section 11.4 value; unknown keys and invalid values are refused):
+    - BCE with logits, pos_weight = #NTM/#TB of the fold;
+    - AdamW with 3 warm-up epochs then cosine;
+    - batch 4, mixed precision and gradient accumulation to 16; on CUDA out-of-memory the batch
+      is halved (keeping 16) and the epoch restarts from the last checkpoint;
+    - training-only augmentation on the GPU (flip, ±10° rotation, 0.9–1.1 scaling, ±8 voxel
+      translation, ±10% intensity, noise σ 0.01);
+    - early stopping on validation AUC (patience 12), best and last checkpoints, automatic
+      resume, CSV and TensorBoard logs, training curves, the saved configuration and provenance
+      (git commit, manifest and split hashes, GPU), and the best model's out-of-fold logits;
+    - MedicalNet ResNet-18 weights when available (via MONAI, or a downloaded file), otherwise
+      training from scratch; the outcome is recorded in the model card.
+  - `calibrate` (FR-10.5): temperature scaling on the out-of-fold logits of every development
+    patient, with per-fold and pooled AUC, Brier score and calibration error.
+  - `export` (FR-10.6): the section 11.6 bundle (saved and checked with the Phase 5 code),
+    `model_card.json` and `docs/MODEL_CARD.md` (intended use, data, preprocessing, training,
+    calibration, performance, limitations). A model built from synthetic data is always
+    `is_demo`.
+  - `evaluate --split dev|test` (FR-10.7, section 11.7): AUC, sensitivity, specificity, PPV,
+    NPV, accuracy, balanced accuracy, F1, Brier score and expected calibration error, each with
+    a stratified-bootstrap 95% CI (2,000 resamples); ROC curve, confusion matrix, reliability
+    diagram, metrics at the Youden threshold chosen on the development set, subgroup AUCs (sex,
+    age band, manufacturer), the clinical baseline and the DeLong test, the shortcut check, and
+    H1/H2 stated as supported or not. Results: `docs/EVALUATION_REPORT.md` and `docs/figures/`.
+    The test split runs **once**: every run is logged in `docs/audit/evaluation_runs.jsonl`
+    and a second run is refused unless `--force` is given with `--reason`. The locked-test
+    results are then written into the bundle (weights unchanged, checked by their SHA-256) and
+    the model card.
+  - `baseline`, `shortcut-check`, `compare` (FR-10.8): clinical-only (age, sex, 12 symptoms)
+    and metadata-only (manufacturer, kernel, slice thickness) logistic regressions on exactly
+    the CT model's folds, and DeLong comparisons of two models on the same patients.
+  - `synthetic-dataset`: a small synthetic look-alike of the Kaggle dataset (zip, uncompressed
+    DICOM, `PatientIndex.xlsx` with legend rows and the real file's quirks). No patient data.
+- **`docs/TRAINING_RUNBOOK.md`**: GPU computer setup (Ubuntu 22.04 or Windows 11 + WSL2, NVIDIA
+  driver, CUDA PyTorch), Kaggle token, download and checksum, disk space, every command in
+  order with expected times, the test-set checklist, troubleshooting, Kaggle's free GPU as a
+  last resort, and publishing the model as a GitHub Release.
+- `make install-train` (toolkit environment, CUDA PyTorch) and `make rehearsal` (every command
+  on the synthetic dataset, including a check that a second test evaluation is refused).
+- Tests for every toolkit module, and an end-to-end test running the whole chain through the
+  CLI (2 folds × 1 epoch on CPU, full-size network) whose bundle is then analysed by the
+  application's `Analyser`. CI installs the training extra and keeps the synthetic report,
+  figures and model card as a downloadable artifact.
+
+### Changed
+- Patients without exactly one row in `PatientIndex.xlsx` are kept in the manifest but left out
+  of the split, with the reason: their label cannot be cross-checked (section 7.3) and the
+  clinical baseline would lack them. In the published file these are Case_226 and Case_227 (not
+  listed) and Case_252 and Case_253 (listed twice with different ages and species).
+- The lungmask segmenter can run on the GPU (`force_cpu=False`, used only by the toolkit; the
+  application stays on the CPU) and its R231 weights can be downloaded with a checksum.
+- `roc_auc` uses SciPy ranks (faster, same results); `threshold_metrics` also returns PPV, NPV,
+  balanced accuracy and F1.
+- The `ml` package has a `train` extra for the toolkit's libraries (pandas, openpyxl,
+  scikit-learn, PyYAML, matplotlib, TensorBoard, pydicom, huggingface_hub); the application
+  image does not install it.
+- Version 0.6.0.
+
+### Notes
+- The toolkit has only been run on synthetic data; the real dataset is processed in Phase 8.
+  The `PatientIndex.xlsx` parser was checked against the structure of the real file.
+- The repository is private, so `make fetch-model` cannot yet download a release asset without
+  a login; the runbook explains the manual step until Phase 9.
+
 ## [0.5.0] Phase 05: AI inference engine and results
 
 ### Added
