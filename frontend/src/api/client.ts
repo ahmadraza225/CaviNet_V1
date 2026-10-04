@@ -168,3 +168,36 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
 export async function apiFetchBlob(path: string): Promise<Blob> {
   return (await request(path, {}, "*/*")).blob();
 }
+
+export interface DownloadedFile {
+  blob: Blob;
+  filename: string;
+}
+
+/** The file name in a Content-Disposition header, e.g. attachment; filename="report.pdf". */
+export function filenameFrom(header: string | null, fallback: string): string {
+  const match = header?.match(/filename="?([^";]+)"?/);
+  return match ? match[1] : fallback;
+}
+
+/** A file to save (e.g. a PDF report) from an endpoint that needs the access token. */
+export async function apiFetchFile(path: string, fallbackName: string): Promise<DownloadedFile> {
+  const response = await request(path, {}, "*/*");
+  return {
+    blob: await response.blob(),
+    filename: filenameFrom(response.headers.get("Content-Disposition"), fallbackName),
+  };
+}
+
+/** Hand a downloaded file to the browser's "save" behaviour. */
+export function saveFile({ blob, filename }: DownloadedFile): void {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  // Give the browser time to start the download before the URL is released.
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+}

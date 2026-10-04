@@ -1,8 +1,8 @@
-import { fireEvent, screen, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DEMO_BANNER, DISCLAIMER } from "../navigation";
-import { demoModel, doctor, mockApi, png, signedInAs } from "../test/api";
+import { demoModel, doctor, mockApi, pdf, png, signedInAs } from "../test/api";
 import { aiCompletedCase, aiResult } from "../test/cases";
 import { renderRoute } from "../test/render";
 
@@ -17,7 +17,7 @@ function stubObjectUrls() {
   return create;
 }
 
-function setup(result = aiResult(), isDemo = true) {
+function setup(result = aiResult(), isDemo = true, extra: Parameters<typeof mockApi>[0] = {}) {
   const previews: Record<string, typeof png> = {};
   for (let index = 0; index < result.preview_count; index++) {
     previews[`GET /api/cases/c-1/previews/${index}`] = png;
@@ -28,6 +28,7 @@ function setup(result = aiResult(), isDemo = true) {
     "GET /api/cases/c-1": { body: aiCompletedCase(isDemo) },
     "GET /api/cases/c-1/result": { body: result },
     ...previews,
+    ...extra,
   });
 }
 
@@ -232,5 +233,68 @@ describe("Slice viewer (FR-06.4)", () => {
 
     const card = await resultCard();
     expect(await within(card).findByText("No preview slices.")).toBeInTheDocument();
+  });
+});
+
+describe("PDF report download (FR-07.1)", () => {
+  beforeEach(() => {
+    stubObjectUrls();
+  });
+
+  it("downloads the report in one click, named by the server, in the local time zone", async () => {
+    const api = setup(aiResult(), true, { "GET /api/cases/c-1/report": pdf });
+    const clicks: { href: string; download: string }[] = [];
+    const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
+      this: HTMLAnchorElement,
+    ) {
+      clicks.push({ href: this.href, download: this.download });
+    });
+    renderRoute("/cases/c-1");
+
+    const card = await resultCard();
+    fireEvent.click(await within(card).findByRole("button", { name: "Download PDF report" }));
+
+    await waitFor(() => expect(clicks).toHaveLength(1));
+    expect(clicks[0].download).toBe("CaviNet-report-MR-1001-2026-10-05.pdf");
+    expect(clicks[0].href).toMatch(/^blob:/);
+    const [call] = api.callsTo("GET", "/api/cases/c-1/report");
+    expect(call.query.get("tz")).toBe(Intl.DateTimeFormat().resolvedOptions().timeZone);
+    expect(call.headers.get("Authorization")).toBe("Bearer token-u-doctor");
+    await waitFor(() =>
+      expect(within(card).getByRole("button", { name: "Download PDF report" })).toBeEnabled(),
+    );
+    click.mockRestore();
+  });
+
+  it("explains a failed download", async () => {
+    setup(aiResult(), true, {
+      "GET /api/cases/c-1/report": {
+        status: 404,
+        body: { detail: "This case has no AI result yet.", code: "no_result" },
+      },
+    });
+    renderRoute("/cases/c-1");
+
+    const card = await resultCard();
+    fireEvent.click(await within(card).findByRole("button", { name: "Download PDF report" }));
+    expect(
+      await within(card).findByText(
+        "The report could not be downloaded: This case has no AI result yet.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("offers no report until the result is shown", async () => {
+    mockApi({
+      ...signedInAs(doctor),
+      "GET /api/model/status": { body: demoModel },
+      "GET /api/cases/c-1": { body: aiCompletedCase(true) },
+      "GET /api/cases/c-1/result": { status: 500, body: { detail: "Server error." } },
+    });
+    renderRoute("/cases/c-1");
+
+    const card = await resultCard();
+    expect(await within(card).findByText("Server error.")).toBeInTheDocument();
+    expect(within(card).queryByRole("button", { name: "Download PDF report" })).toBeNull();
   });
 });

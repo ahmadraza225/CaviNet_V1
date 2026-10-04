@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { getResult, type AiResult, type ConfidenceBand } from "../api/cases";
 import { formatDateTime } from "../format";
 import { DEMO_BANNER } from "../navigation";
+import { ReportButton } from "./ReportButton";
 import { SliceViewer } from "./SliceViewer";
 import { Alert } from "./ui";
 
@@ -152,9 +153,12 @@ export function AiResultCard({ caseId }: { caseId: string }) {
   });
   return (
     <section aria-labelledby="result-title" className="rounded-lg bg-white p-6 shadow-sm">
-      <h2 id="result-title" className="text-lg font-semibold text-slate-800">
-        AI result
-      </h2>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <h2 id="result-title" className="text-lg font-semibold text-slate-800">
+          AI result
+        </h2>
+        {result.data && <ReportButton caseId={caseId} />}
+      </div>
       <div className="mt-4">
         {result.isError && <Alert tone="error">{(result.error as Error).message}</Alert>}
         {result.isPending && <p className="text-sm text-slate-500">Loading the result…</p>}
