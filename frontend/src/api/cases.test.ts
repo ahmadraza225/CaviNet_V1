@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { admin, mockApi, session } from "../test/api";
 import { makeCase } from "../test/cases";
 import { fakeFile, mockXhr } from "../test/xhr";
-import { setAccessToken } from "./client";
+import { SERVER_RESTARTING, setAccessToken } from "./client";
 import { NETWORK_ERROR, TOO_LARGE, uploadScan } from "./cases";
 
 describe("uploadScan", () => {
@@ -73,7 +73,7 @@ describe("uploadScan", () => {
     });
     await expect(uploadScan("p-1", [fakeFile("a.zip")], () => undefined)).rejects.toMatchObject({
       status: 502,
-      message: "Request failed (HTTP 502).",
+      message: SERVER_RESTARTING,
     });
   });
 });

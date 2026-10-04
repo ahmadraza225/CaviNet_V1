@@ -4,7 +4,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { ApiError } from "../../api/client";
 import { createPatient, getPatient, updatePatient, type Patient } from "../../api/patients";
-import { Alert, Button, SelectField, TextAreaField, TextField } from "../../components/ui";
+import { Alert, Button, Loading, SelectField, TextAreaField, TextField } from "../../components/ui";
 import {
   EARLIEST_BIRTH_DATE,
   EMPTY_PATIENT_FORM,
@@ -185,6 +185,6 @@ export function PatientFormPage() {
   if (existing.isError) {
     return <Alert tone="error">{(existing.error as Error).message}</Alert>;
   }
-  if (!existing.data) return <p className="text-sm text-slate-500">Loading patient…</p>;
+  if (!existing.data) return <Loading>Loading patient…</Loading>;
   return <PatientForm patient={existing.data} />;
 }

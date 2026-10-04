@@ -294,6 +294,62 @@ jobs:
             "$api/patients/$patient?confirm=CI-0002")
           test "$code" = 204
           docker compose exec -T backend sh -c "[ ! -e /data/cases/$case_id ]"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+      - name: End-to-end journey in a real browser (section 9.2, Playwright)
+        env:
+          E2E_SCREENSHOTS: ${{ runner.temp }}/e2e-screenshots
+        run: |
+          (cd e2e && npm ci --no-audit --no-fund && npx playwright install --with-deps chromium)
+          (cd e2e && npm run typecheck && npm run format:check)
+          make e2e
+      - name: Keep the end-to-end screenshots, PDF report and Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-journey
+          path: |
+            ${{ runner.temp }}/e2e-screenshots
+            e2e/playwright-report
+            e2e/test-results
+          if-no-files-found: ignore
+      - name: make backup and make restore bring back a deleted patient and their files (NFR-4)
+        run: |
+          set -a; source .env; set +a
+          api=http://localhost:8080/api
+          field() { python3 -c "import json, sys; print(json.load(sys.stdin)$1)"; }
+          token=$(curl -fsS -H "Content-Type: application/json" \
+            -d "{\"email\":\"$DEMO_DOCTOR_EMAIL\",\"password\":\"$DEMO_DOCTOR_PASSWORD\"}" \
+            $api/auth/login | field '["access_token"]')
+          auth="Authorization: Bearer $token"
+          patient=$(curl -fsS -H "$auth" -H "Content-Type: application/json" -d '{"full_name":
+            "Ci Backuppatient","mr_number":"CI-0003","date_of_birth":"1960-01-01","sex":"male"}' \
+            $api/patients | field '["id"]')
+          case_id=$(curl -fsS -H "$auth" -F "files=@demo-data/e2e_synthetic_ct.zip" \
+            "$api/patients/$patient/cases" | field '["id"]')
+          for _ in $(seq 1 120); do
+            status=$(curl -fsS -H "$auth" "$api/cases/$case_id" | field '["status"]')
+            [ "$status" = completed ] && break
+            sleep 2
+          done
+          test "$status" = completed
+          make backup
+          backup=$(ls -d backups/* | tail -1)
+          code() { curl -s -o /dev/null -w "%{http_code}" "$@"; }
+          test "$(code -X DELETE -H "$auth" "$api/patients/$patient?confirm=CI-0003")" = 204
+          test "$(code -H "$auth" "$api/patients/$patient")" = 404
+          make restore BACKUP="$backup"
+          test "$(code -H "$auth" "$api/patients/$patient")" = 200
+          curl -fsS -H "$auth" "$api/cases/$case_id/result" | grep -q '"predicted_class"'
+          curl -fsS -H "$auth" -o preview.png "$api/cases/$case_id/previews/24"
+          file preview.png | grep -q "PNG image"
+          curl -fsS -H "$auth" -o report.pdf "$api/cases/$case_id/report"
+          file report.pdf | grep -q "PDF document"
+          # Restoring needs a backup folder; without one it explains and changes nothing.
+          ! make restore BACKUP=backups/does-not-exist
       - name: Time the analysis of a synthetic 300-slice scan on the CI CPU (NFR-1)
         run: docker compose exec -T worker python -m app.benchmark --slices 300
       - name: Show service logs

@@ -6,7 +6,7 @@ import { ApiError } from "../../api/client";
 import { deletePatient, getPatient, type PatientDetail } from "../../api/patients";
 import { ResultLabel } from "../../components/ResultLabel";
 import { StatusBadge } from "../../components/StatusBadge";
-import { Alert, Button } from "../../components/ui";
+import { Alert, Button, Loading } from "../../components/ui";
 import { UploadCtButton } from "../../components/UploadCtButton";
 import { isFinal } from "../../caseStatus";
 import { formatDate, formatDateTime, SEX_LABELS } from "../../format";
@@ -182,7 +182,7 @@ export function PatientDetailPage() {
       </div>
     );
   }
-  if (!patient.data) return <p className="text-sm text-slate-500">Loading patient…</p>;
+  if (!patient.data) return <Loading>Loading patient…</Loading>;
 
   const data = patient.data;
   return (

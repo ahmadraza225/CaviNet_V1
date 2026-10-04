@@ -15,7 +15,7 @@ HEALTH_URL := http://localhost:$(CAVINET_HTTP_PORT)/api/health
 
 .PHONY: help env up down logs ps install install-train rehearsal test test-backend test-ml \
         test-frontend lint lint-python lint-frontend format seed demo-scan fetch-model benchmark \
-        backup restore
+        backup restore e2e manual-screenshots
 
 help: ## Show this list of commands
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | \
@@ -66,6 +66,21 @@ backup: ## Back up the database and stored files into backups/
 
 restore: ## Restore a backup: make restore BACKUP=backups/<timestamp>
 	./scripts/restore.sh "$(BACKUP)"
+
+## ---- End-to-end test (needs the running stack and Node 20+) ----
+
+e2e: ## Run the Playwright journey of section 9.2 against the running stack (make up first)
+	@mkdir -p demo-data
+	$(COMPOSE) exec -T backend python -m app.synthetic_dicom --slices 60 --size 256 \
+	  > demo-data/e2e_synthetic_ct.zip
+	cd e2e && npm ci --no-audit --no-fund && npx playwright install chromium && npx playwright test
+
+manual-screenshots: ## Refresh the screenshots in docs/USER_MANUAL.md (on a fresh stack)
+	E2E_SCREENSHOTS=../docs/images/manual $(MAKE) --no-print-directory e2e
+	@if command -v pdftoppm >/dev/null; then \
+	  pdftoppm -png -r 90 -singlefile docs/images/manual/report.pdf docs/images/manual/10-report; \
+	else echo "pdftoppm (poppler-utils) not found: docs/images/manual/10-report.png not refreshed"; fi
+	@rm -f docs/images/manual/report.pdf
 
 ## ---- Development (needs Python 3.11+ and Node 20+) ----
 

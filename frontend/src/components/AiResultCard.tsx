@@ -6,7 +6,7 @@ import { formatDateTime } from "../format";
 import { DEMO_BANNER } from "../navigation";
 import { ReportButton } from "./ReportButton";
 import { SliceViewer } from "./SliceViewer";
-import { Alert } from "./ui";
+import { Alert, Loading } from "./ui";
 
 const BAND_STYLES: Record<ConfidenceBand, string> = {
   High: "bg-green-100 text-green-900",
@@ -161,7 +161,7 @@ export function AiResultCard({ caseId }: { caseId: string }) {
       </div>
       <div className="mt-4">
         {result.isError && <Alert tone="error">{(result.error as Error).message}</Alert>}
-        {result.isPending && <p className="text-sm text-slate-500">Loading the result…</p>}
+        {result.isPending && <Loading>Loading the result…</Loading>}
         {result.data && <ResultBody result={result.data} caseId={caseId} />}
       </div>
     </section>

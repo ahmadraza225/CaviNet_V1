@@ -8,7 +8,7 @@ import {
   type PatientSort,
   type SortOrder,
 } from "../../api/patients";
-import { Alert, Button } from "../../components/ui";
+import { Alert, Button, Loading } from "../../components/ui";
 import { formatDate, formatDateTime, SEX_LABELS } from "../../format";
 
 const SORTS: PatientSort[] = [
@@ -154,7 +154,7 @@ export function PatientsPage() {
       {patients.isError && <Alert tone="error">{(patients.error as Error).message}</Alert>}
 
       <section className="overflow-x-auto rounded-lg bg-white shadow-sm">
-        {patients.isPending && <p className="p-6 text-sm text-slate-500">Loading patients…</p>}
+        {patients.isPending && <Loading className="p-6">Loading patients…</Loading>}
         {data && data.items.length === 0 && (
           <p className="p-6 text-sm text-slate-500">
             {params.q

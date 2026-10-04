@@ -55,9 +55,24 @@ export function onSessionExpired(handler: (() => void) | null): void {
   sessionExpiredHandler = handler;
 }
 
+/** The browser could not reach the server at all (offline, or CaviNet is stopped). */
+export const UNREACHABLE =
+  "CaviNet cannot be reached. Check the network connection and that CaviNet is running, then try again.";
+/** nginx answers 502/503/504 while the API is starting or restarting. */
+export const SERVER_RESTARTING =
+  "CaviNet's server is not responding right now (it may be starting or restarting). Wait a minute and try again.";
+export const SERVER_ERROR =
+  "Something went wrong on the server. Try again; if it keeps happening, tell your administrator.";
+
+function defaultMessage(status: number): string {
+  if (status === 502 || status === 503 || status === 504) return SERVER_RESTARTING;
+  if (status >= 500) return SERVER_ERROR;
+  return `Request failed (HTTP ${status}).`;
+}
+
 /** Turn an error response body ({detail, code} or FastAPI validation errors) into an ApiError. */
 export function apiErrorFromBody(status: number, body: unknown): ApiError {
-  let message = `Request failed (HTTP ${status}).`;
+  let message = defaultMessage(status);
   let code: string | undefined;
   const fields: Record<string, string> = {};
   if (body && typeof body === "object") {
@@ -141,11 +156,19 @@ async function request(path: string, options: RequestOptions, accept: string): P
     });
   };
 
-  let response = await send();
+  const sendOrExplain = async () => {
+    try {
+      return await send();
+    } catch {
+      throw new ApiError(0, UNREACHABLE, "network_error");
+    }
+  };
+
+  let response = await sendOrExplain();
   if (response.status === 401 && auth) {
     const renewed = await refreshSession();
     if (renewed) {
-      response = await send();
+      response = await sendOrExplain();
     } else {
       sessionExpiredHandler?.();
     }
