@@ -95,7 +95,10 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 - Synthetic scans now have lungs that shrink towards both ends, like a real chest, so
-  lungmask finds them.
+  lungmask finds them. `make demo-scan` writes a 512 × 512 scan (a realistic 36 cm field of
+  view), so the demo analysis needs no fallback crop.
+- lungmask runs in batches of 2 slices: as fast on CPU as its default of 20, with a fraction
+  of the memory (a 300-slice scan peaked at 4.5 GB before, 2.2 GB now).
 - The backend image installs CPU-only PyTorch (`TORCH_INDEX_URL` can point elsewhere when the
   PyTorch index is unreachable).
 - nginx looks the backend up through Docker's DNS on every request (cached 10 s). Before, after
@@ -113,9 +116,10 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   mask of the nearest segmented slice (`lungmask_max_slice_gap_mm`, stored in the bundle).
   This keeps a 300-slice scan within the 3-minute target (NFR-1). Training in Phase 6 uses
   the same setting, so training and inference stay identical.
-- **NFR-1 timing:** a synthetic 300-slice 512 × 512 scan took 75 s on the development CPU,
-  using real lungmask and the demo model. Lung masking was 73 s; a full-size 5-fold ensemble
-  adds about 2 s. The CI run times are in the Phase 5 pull request.
+- **NFR-1 timing:** `make benchmark` analysed a synthetic 300-slice 512 × 512 scan in 50 s
+  on a 4-core development CPU, using real lungmask and the demo model (lung masking 47 s; a
+  full-size 5-fold ensemble adds about 2 s). The worker container peaked at 2.2 GB of
+  memory. The CI timing is in the Phase 5 pull request.
 
 ### Upgrade notes
 - Run `make up`. It rebuilds the images (the AI libraries make the first build take several
