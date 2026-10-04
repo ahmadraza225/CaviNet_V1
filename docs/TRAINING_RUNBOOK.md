@@ -120,18 +120,19 @@ Clone it on the drive with the free space: the toolkit writes its files into `Ca
 ### A4. Choose the PyTorch build for your driver
 
 `nvidia-smi` shows the highest CUDA version the driver supports (top right, "CUDA Version").
-Pick the matching PyTorch index:
+The toolkit needs PyTorch 2.8 or newer, which is built for CUDA 12.6 and 12.8. Pick the
+matching PyTorch index:
 
 | `nvidia-smi` shows | Use |
 |---|---|
-| 12.4 or higher | `https://download.pytorch.org/whl/cu124` |
-| 12.1 to 12.3 | `https://download.pytorch.org/whl/cu121` |
-| 11.8 to 12.0 | `https://download.pytorch.org/whl/cu118` |
+| 12.8 or higher (including 13.x) | `https://download.pytorch.org/whl/cu128` |
+| 12.6 or 12.7 | `https://download.pytorch.org/whl/cu126` |
+| lower than 12.6 | Update the NVIDIA driver first (Ubuntu: `sudo ubuntu-drivers install`; Windows: the latest driver from nvidia.com), restart, and check again |
 
 ### A5. Install the training toolkit
 
 ```bash
-make install-train TORCH_INDEX_URL=https://download.pytorch.org/whl/cu124   # your index from A4
+make install-train TORCH_INDEX_URL=https://download.pytorch.org/whl/cu128   # your index from A4
 source .venv-train/bin/activate      # do this in every new terminal
 python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))"
 cavinet-ml --version
@@ -438,7 +439,7 @@ git push
 
 | Problem | What to do |
 |---|---|
-| `torch.cuda.is_available()` prints `False` | The PyTorch build does not match the driver. Re-check A4, then `pip install --force-reinstall --index-url <index> "torch>=2.3,<3"` inside `.venv-train`. On WSL also run `wsl --update` and update the Windows NVIDIA driver. |
+| `torch.cuda.is_available()` prints `False` | The PyTorch build does not match the driver. Re-check A4, then `pip install --force-reinstall --index-url <index> "torch>=2.8,<3"` inside `.venv-train`. On WSL also run `wsl --update` and update the Windows NVIDIA driver. |
 | `nvidia-smi: command not found` (WSL) | Install/update the NVIDIA driver **on Windows**, run `wsl --update` in PowerShell, restart. |
 | Kaggle `401 Unauthorized` | The token is wrong or old: create a new one (B1) and replace `~/.kaggle/kaggle.json`; check `chmod 600`. |
 | The download keeps breaking | Use the resumable `curl` line in B3; re-run it until it finishes; then check the checksum. |

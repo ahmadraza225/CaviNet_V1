@@ -131,7 +131,7 @@ download, every command in order, expected times, troubleshooting and publishing
 
 | Step | Command |
 |---|---|
-| Install (GPU computer) | `make install-train TORCH_INDEX_URL=https://download.pytorch.org/whl/cu124` |
+| Install (GPU computer) | `make install-train TORCH_INDEX_URL=https://download.pytorch.org/whl/cu128` |
 | Rehearse everything on synthetic data | `make rehearsal` (about 2 minutes on a CPU, 5 on a GPU) |
 | 1. Index the dataset | `cavinet-ml index --data dicom-dataset.zip` → `work/manifest.csv` |
 | 2. Preprocess (section 11.1) | `cavinet-ml preprocess --workers 4` → cache + QC report (resumable) |

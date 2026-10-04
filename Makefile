@@ -72,7 +72,7 @@ restore: ## Restore a backup: make restore BACKUP=backups/<timestamp>
 install: ## Create .venv with backend + ml dev dependencies and install frontend packages
 	$(PYTHON) -m venv $(VENV)
 	$(VENV_BIN)/pip install --upgrade pip
-	$(VENV_BIN)/pip install --index-url $(TORCH_INDEX_URL) "torch>=2.3,<3"
+	$(VENV_BIN)/pip install --index-url $(TORCH_INDEX_URL) "torch>=2.8,<3"
 	$(VENV_BIN)/pip install -e "./ml[dev,train]" -e "./backend[dev]"
 	cd frontend && npm ci
 
@@ -106,7 +106,7 @@ format: ## Auto-format Python and frontend code
 install-train: ## Create .venv-train with the training toolkit (GPU: TORCH_INDEX_URL=<CUDA index>)
 	$(PYTHON) -m venv .venv-train
 	.venv-train/bin/pip install --upgrade pip
-	.venv-train/bin/pip install --index-url $(TORCH_INDEX_URL) "torch>=2.3,<3"
+	.venv-train/bin/pip install --index-url $(TORCH_INDEX_URL) "torch>=2.8,<3"
 	.venv-train/bin/pip install -e "./ml[train]"
 
 rehearsal: ## Run the whole training toolkit on a synthetic dataset (REHEARSAL_LUNGMASK=1 for lungmask)
