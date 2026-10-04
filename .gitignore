@@ -19,6 +19,8 @@ frontend/coverage/
 
 # Runtime data, backups and model files (never committed)
 data/
+# Training toolkit workspace: manifest, cache, QC, runs, exports (never committed)
+work/
 backups/
 demo-data/
 models/*

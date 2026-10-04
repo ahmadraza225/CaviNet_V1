@@ -13,8 +13,9 @@ HEALTH_URL := http://localhost:$(CAVINET_HTTP_PORT)/api/health
 
 .DEFAULT_GOAL := help
 
-.PHONY: help env up down logs ps install test test-backend test-ml test-frontend \
-        lint lint-python lint-frontend format seed demo-scan fetch-model benchmark backup restore
+.PHONY: help env up down logs ps install install-train rehearsal test test-backend test-ml \
+        test-frontend lint lint-python lint-frontend format seed demo-scan fetch-model benchmark \
+        backup restore
 
 help: ## Show this list of commands
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | \
@@ -72,7 +73,7 @@ install: ## Create .venv with backend + ml dev dependencies and install frontend
 	$(PYTHON) -m venv $(VENV)
 	$(VENV_BIN)/pip install --upgrade pip
 	$(VENV_BIN)/pip install --index-url $(TORCH_INDEX_URL) "torch>=2.3,<3"
-	$(VENV_BIN)/pip install -e "./ml[dev]" -e "./backend[dev]"
+	$(VENV_BIN)/pip install -e "./ml[dev,train]" -e "./backend[dev]"
 	cd frontend && npm ci
 
 test: test-backend test-ml test-frontend ## Run every automated test
@@ -99,3 +100,14 @@ format: ## Auto-format Python and frontend code
 	$(VENV_BIN)/ruff check --fix backend ml scripts
 	$(VENV_BIN)/ruff format backend ml scripts
 	cd frontend && npm run format
+
+## ---- Training toolkit (GPU computer; see docs/TRAINING_RUNBOOK.md) ----
+
+install-train: ## Create .venv-train with the training toolkit (GPU: TORCH_INDEX_URL=<CUDA index>)
+	$(PYTHON) -m venv .venv-train
+	.venv-train/bin/pip install --upgrade pip
+	.venv-train/bin/pip install --index-url $(TORCH_INDEX_URL) "torch>=2.3,<3"
+	.venv-train/bin/pip install -e "./ml[train]"
+
+rehearsal: ## Run the whole training toolkit on a synthetic dataset (REHEARSAL_LUNGMASK=1 for lungmask)
+	./scripts/toolkit_rehearsal.sh
