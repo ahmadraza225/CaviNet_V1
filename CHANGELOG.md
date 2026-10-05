@@ -53,6 +53,8 @@ to passing tests. The AI model is still the demo model until the real one is tra
 - **Traceability:** `docs/TRACEABILITY.md` now covers FR-07, the Phase 7 items and NFR-1 to
   NFR-9; `scripts/check_traceability.py` (in `make lint` and CI) fails when a core FR is not
   Implemented, names no test, or names a test that does not exist.
+- **Coverage floor (NFR-7):** `pytest --cov` (the Backend and ML CI jobs) fails below 70% line
+  coverage. At this release: backend 98%, ml 97%.
 - `VITE_API_PROXY=http://localhost:8080 npm run dev` runs the frontend with hot reload
   against the running stack.
 

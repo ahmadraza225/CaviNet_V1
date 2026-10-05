@@ -259,8 +259,8 @@ These are requirements (NFR-2, NFR-3), not preferences:
 
 | Job | What it checks |
 |---|---|
-| Backend (ruff + pytest) | Lint, format, unit/API tests, integration tests against PostgreSQL and Redis services |
-| ML package (ruff + pytest) | Lint, tests including the synthetic end-to-end training pipeline (report kept as an artifact) |
+| Backend (ruff + pytest) | Lint, format, the traceability table, unit/API tests, integration tests against PostgreSQL and Redis services; fails below 70% line coverage (NFR-7) |
+| ML package (ruff + pytest) | Lint, tests including the synthetic end-to-end training pipeline (report kept as an artifact); fails below 70% line coverage |
 | Frontend (eslint + vitest + build) | Lint, format, type check, tests, production build |
 | Dependency vulnerability scan | `pip-audit` and `npm audit` |
 | Full stack (make up + health check) | `make up` from a fresh checkout; health, security headers and size limits through nginx; sign-in and roles; patient CRUD and log privacy; a synthetic scan analysed to completion; the **Playwright journey** (screenshots, PDF and report kept as the `e2e-journey` artifact); a **backup, delete, restore** round trip; the 300-slice timing (NFR-1) |

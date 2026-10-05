@@ -55,3 +55,7 @@ filterwarnings = [
 
 [tool.coverage.run]
 source = ["app"]
+
+[tool.coverage.report]
+# NFR-7: at least 70% line coverage; `pytest --cov` fails below it.
+fail_under = 70
