@@ -18,8 +18,8 @@ HEALTH_URL := http://localhost:$(CAVINET_HTTP_PORT)/api/health
         backup restore e2e manual-screenshots
 
 help: ## Show this list of commands
-	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | \
-	  awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
+	@grep -hE '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) | \
+	  awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-19s\033[0m %s\n", $$1, $$2}'
 
 env: ## Create .env with generated secrets, or add settings new in .env.example
 	@./scripts/init_env.sh
@@ -52,8 +52,10 @@ demo-scan: ## Write synthetic test CT scans (no real patient) to demo-data/ for 
 	@echo "Wrote demo-data/synthetic_chest_ct.zip (accepted) and"
 	@echo "      demo-data/synthetic_too_few_slices.zip (rejected: fewer than 50 slices)."
 
+# Runs as your own user so the model file is yours. USER is set because that user may not exist
+# inside the image (e.g. uid 1001 on CI), and MONAI looks up the user name when it is imported.
 fetch-model: ## Download the model named by MODEL_URL in .env, or build the demo model
-	$(COMPOSE) run --rm --no-deps --user "$$(id -u):$$(id -g)" -e HOME=/tmp \
+	$(COMPOSE) run --rm --no-deps --user "$$(id -u):$$(id -g)" -e HOME=/tmp -e USER=cavinet \
 	  -e CAVINET_GIT_COMMIT="$$(git rev-parse --short HEAD 2>/dev/null || echo unknown)" worker \
 	  cavinet-ml fetch-model --out /models/cavinet_model.pth $(if $(FORCE),--force,)
 	@echo "The worker picks up a new model file automatically for the next scan."
