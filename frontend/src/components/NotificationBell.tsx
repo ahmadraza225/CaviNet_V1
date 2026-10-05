@@ -11,6 +11,7 @@ import {
   type AppNotification,
 } from "../api/notifications";
 import { formatDateTime } from "../format";
+import { Loading } from "./ui";
 
 const KEY = ["notifications"];
 
@@ -79,7 +80,7 @@ export function NotificationBell() {
               Mark all as read
             </button>
           </div>
-          {list.isPending && <p className="px-4 py-3 text-sm text-slate-500">Loading…</p>}
+          {list.isPending && <Loading className="px-4 py-3">Loading…</Loading>}
           {list.isError && (
             <p className="px-4 py-3 text-sm text-red-700">{(list.error as Error).message}</p>
           )}

@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 import { ApiError } from "../../api/client";
 import { getModelInfo, type ModelInfo, type TestMetrics } from "../../api/model";
-import { Alert } from "../../components/ui";
+import { Alert, Loading } from "../../components/ui";
 import { formatDateTime } from "../../format";
 import { DEMO_BANNER } from "../../navigation";
 
@@ -149,7 +149,7 @@ export function ModelPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-slate-800">AI model</h1>
-      {info.isPending && <p className="text-sm text-slate-500">Loading the model details…</p>}
+      {info.isPending && <Loading>Loading the model details…</Loading>}
       {error && <Alert tone={notInstalled ? "warning" : "error"}>{error.message}</Alert>}
       {info.data && <ModelDetails info={info.data} />}
     </div>

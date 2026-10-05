@@ -6,7 +6,7 @@ import { getCase, type CaseDetail, type TimelineEntry } from "../../api/cases";
 import { formatBytes, isFinal, STATUS_LABELS, STATUS_STEPS } from "../../caseStatus";
 import { AiResultCard } from "../../components/AiResultCard";
 import { StatusBadge } from "../../components/StatusBadge";
-import { Alert } from "../../components/ui";
+import { Alert, Loading } from "../../components/ui";
 import { formatDate, formatDateTime } from "../../format";
 import { DISCLAIMER } from "../../navigation";
 
@@ -178,7 +178,7 @@ export function CasePage() {
       </div>
     );
   }
-  if (!query.data) return <p className="text-sm text-slate-500">Loading case…</p>;
+  if (!query.data) return <Loading>Loading case…</Loading>;
 
   const detail = query.data;
   return (

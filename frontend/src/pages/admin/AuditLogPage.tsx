@@ -2,7 +2,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 
 import { listAuditActions, listAuditLogs, listUsers, type AuditFilters } from "../../api/admin";
-import { Alert, Button, SelectField, TextField } from "../../components/ui";
+import { Alert, Button, Loading, SelectField, TextField } from "../../components/ui";
 import { actionLabel, targetLabel } from "./auditLabels";
 
 const PAGE_SIZE = 25;
@@ -108,7 +108,7 @@ export function AuditLogPage() {
       {logs.isError && <Alert tone="error">{(logs.error as Error).message}</Alert>}
 
       <section className="overflow-x-auto rounded-lg bg-white shadow-sm">
-        {logs.isPending && <p className="p-6 text-sm text-slate-500">Loading audit log…</p>}
+        {logs.isPending && <Loading className="p-6">Loading audit log…</Loading>}
         {logs.data && logs.data.items.length === 0 && (
           <p className="p-6 text-sm text-slate-500">No entries match these filters.</p>
         )}

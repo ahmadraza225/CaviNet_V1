@@ -2,9 +2,11 @@ import {
   apiErrorFromBody,
   apiFetch,
   apiFetchBlob,
+  apiFetchFile,
   ApiError,
   getAccessToken,
   refreshSession,
+  type DownloadedFile,
 } from "./client";
 
 export type CaseStatus =
@@ -97,6 +99,22 @@ export interface CaseDetail {
 export const getCase = (id: string) => apiFetch<CaseDetail>(`/api/cases/${id}`);
 
 export const getResult = (id: string) => apiFetch<AiResult>(`/api/cases/${id}/result`);
+
+/** The browser's time zone (e.g. "Asia/Karachi"), so the report date is in local time. */
+function localTimeZone(): string | undefined {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** FR-07.1: the PDF report of a completed case. The download is audited (FR-07.3). */
+export function downloadReport(id: string): Promise<DownloadedFile> {
+  const tz = localTimeZone();
+  const query = tz ? `?tz=${encodeURIComponent(tz)}` : "";
+  return apiFetchFile(`/api/cases/${id}/report${query}`, "CaviNet-report.pdf");
+}
 
 /** FR-06.4: preview slice `index` (0 = nearest the head) as an object URL for <img>. */
 export async function getPreviewUrl(id: string, index: number): Promise<string> {

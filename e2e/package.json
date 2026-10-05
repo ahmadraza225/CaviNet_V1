@@ -1,0 +1,23 @@
+{
+  "name": "cavinet-e2e",
+  "private": true,
+  "version": "0.9.0",
+  "description": "Playwright end-to-end test of the doctor's journey (scope section 9.2) against the running stack.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "playwright test",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1",
+    "@types/node": "^20.19.43",
+    "pdfjs-dist": "4.10.38",
+    "prettier": "^3.9.9",
+    "typescript": "~5.6.3"
+  }
+}

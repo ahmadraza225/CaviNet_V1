@@ -26,6 +26,19 @@ export function Alert({ tone = "info", children }: { tone?: Tone; children: Reac
   );
 }
 
+/** A loading message, announced to screen readers, with a small spinner. */
+export function Loading({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return (
+    <p role="status" className={`flex items-center gap-2 text-sm text-slate-500 ${className}`}>
+      <span
+        aria-hidden="true"
+        className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-brand-600"
+      />
+      {children}
+    </p>
+  );
+}
+
 const fieldClasses =
   "mt-1 block w-full rounded-md border px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600";
 

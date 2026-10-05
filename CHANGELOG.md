@@ -3,6 +3,82 @@
 All notable changes to CaviNet are recorded here, one section per phase.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.0] Phase 07: Reports, end-to-end testing and documentation (v0.9-demo)
+
+The core system is complete: every core requirement (M-01 to M-10) is implemented and traced
+to passing tests. The AI model is still the demo model until the real one is trained
+(Phase 8).
+
+### Added
+- **PDF diagnostic report (M-07, FR-07.1 to FR-07.3).** "Download PDF report" on the result
+  of a completed case downloads a one-page A4 report in one click, named after the MR number
+  and date. It holds every FR-07.2 item: CaviNet header, report date (in the doctor's time
+  zone), patient name, MR number, age at the scan, sex, scan details, result, probability of
+  TB, confidence and band with the explanation and band legend, three representative slices
+  (upper, middle, lower lungs), model version and validated performance, the disclaimer and
+  a signature line. Demo-model reports carry the DEMO banner on every page. Reports are
+  built on each download and never stored (patient identity stays in the patients table),
+  and each download is audited as "Report downloaded" (case id only).
+- **End-to-end test of the section 9.2 journey** (`e2e/`, Playwright, `make e2e`): in a real
+  browser against the running stack, the first admin signs in and changes the password,
+  creates a doctor; the doctor changes the temporary password, creates a patient, uploads a
+  synthetic scan with the progress bar, follows the timeline to Completed, checks the
+  result, downloads the PDF and checks every FR-07.2 item in it, and reads the
+  notification; the admin finds the download in the audit log. Any Content-Security-Policy
+  violation or page error fails the test. It runs in CI, which keeps the screenshots, the
+  PDF and the Playwright report as the `e2e-journey` artifact.
+- **Security pass (NFR-2).** Role tests state the section 9.3 matrix endpoint by endpoint and
+  check every endpoint and role (401 without a token, 403 for a wrong role or a pending
+  password change, allowed roles pass). New upload-limit tests (a streamed upload without a
+  declared size is cut off; the limit counts all files together). nginx sends a
+  Content-Security-Policy without inline or third-party code, X-Content-Type-Options,
+  X-Frame-Options, Referrer-Policy, Permissions-Policy, Cross-Origin-Opener-Policy and
+  Cross-Origin-Resource-Policy, hides its version, and refuses API requests over 16 MB;
+  API answers default to `Cache-Control: no-store`. A new CI job scans dependencies
+  (`pip-audit`; `npm audit` failing on high or critical advisories in browser packages).
+- **Backup and restore round trip in CI (NFR-4):** `make backup`, delete a patient,
+  `make restore`; the patient, result, preview images and PDF report come back. Typed at a
+  terminal, `make restore` now asks for confirmation.
+- **Friendly error, empty and loading states:** an error page ("Something went wrong",
+  Reload / Go to the start page, no technical detail) instead of a blank or technical screen;
+  plain messages when CaviNet cannot be reached, is restarting (502/503/504) or fails
+  unexpectedly; a shared loading indicator announced to screen readers on every page, now
+  also on the upload page; the reason when the user list cannot load.
+- **Documentation:** `docs/USER_MANUAL.md` for doctors and administrators in plain language
+  with 13 screenshots taken by the Playwright journey (`make manual-screenshots`);
+  `docs/DEPLOYMENT.md` for a Windows, macOS or Linux team laptop (requirements measured on a
+  300-slice scan, setup, settings, model installation, backups, updates, network use,
+  troubleshooting, and a setup timing checklist); `docs/DEVELOPER_GUIDE.md` (architecture,
+  scan flow, layout, tests, conventions, privacy rules, CI, releases, recipes).
+- **Traceability:** `docs/TRACEABILITY.md` now covers FR-07, the Phase 7 items and NFR-1 to
+  NFR-9; `scripts/check_traceability.py` (in `make lint` and CI) fails when a core FR is not
+  Implemented, names no test, or names a test that does not exist.
+- **Coverage floor (NFR-7):** `pytest --cov` (the Backend and ML CI jobs) fails below 70% line
+  coverage. At this release: backend 98%, ml 97%.
+- `VITE_API_PROXY=http://localhost:8080 npm run dev` runs the frontend with hot reload
+  against the running stack.
+
+### Changed
+- MONAI 1.6.1 (six security advisories fixed in 1.6.x), which needs PyTorch 2.8 or newer; the
+  training runbook names the CUDA 12.6/12.8 PyTorch builds. Existing model files still load.
+- `make fetch-model` sets `USER` in the container: MONAI 1.6 looks up the user name on import,
+  and the caller's uid may not exist in the image (this stopped `make up` on CI).
+- `make help` lists every target (names with digits, such as `e2e`, were missing; the list
+  was garbled once `.env` existed).
+- Error messages for network failures and server errors (502/503/504/500) are written for
+  doctors instead of "Request failed (HTTP 502)".
+
+### Notes
+- Measured: CI's `make up` from a fresh checkout took 4 min 11 s; the 300-slice analysis
+  took 127 s on CI's 2-core runner and about 75 s on 4 cores (target 3 minutes), using
+  about 2.6 GB of memory for the whole stack.
+- The acceptance criterion "under 15 minutes of setup on a clean team laptop" depends on the
+  laptop and connection; `docs/DEPLOYMENT.md` section 15 is the checklist for that run.
+
+### Upgrade notes
+- `git pull` then `make up`: the backend and frontend images are rebuilt (PyTorch 2.8+ and
+  MONAI 1.6.1 are downloaded once). No database migration in this release.
+
 ## [0.6.0] Phase 06: Training and evaluation toolkit
 
 ### Added

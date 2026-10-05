@@ -1,7 +1,17 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { admin, mockApi, png, session } from "../test/api";
-import { ApiError, apiFetch, apiFetchBlob, refreshSession, setAccessToken } from "./client";
+import {
+  ApiError,
+  apiFetch,
+  apiFetchBlob,
+  filenameFrom,
+  refreshSession,
+  SERVER_ERROR,
+  SERVER_RESTARTING,
+  setAccessToken,
+  UNREACHABLE,
+} from "./client";
 
 describe("apiFetch", () => {
   it("turns FastAPI validation errors into one readable message", async () => {
@@ -90,5 +100,56 @@ describe("apiFetchBlob", () => {
       status: 404,
       message: "Preview not found.",
     });
+  });
+});
+
+describe("friendly errors when the server cannot answer", () => {
+  it("explains that CaviNet cannot be reached when the request never gets through", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new TypeError("Failed to fetch");
+      }),
+    );
+    const error = (await apiFetch("/api/x", { auth: false }).catch((e: unknown) => e)) as ApiError;
+    expect(error).toBeInstanceOf(ApiError);
+    expect(error.message).toBe(UNREACHABLE);
+    expect(error.code).toBe("network_error");
+  });
+
+  it.each([502, 503, 504])("says the server is restarting for nginx's %i page", async (status) => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("<html>Bad Gateway</html>", { status })),
+    );
+    const error = (await apiFetch("/api/x", { auth: false }).catch((e: unknown) => e)) as ApiError;
+    expect(error.message).toBe(SERVER_RESTARTING);
+    expect(error.status).toBe(status);
+  });
+
+  it("gives a plain message for an unexpected server error without details", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("Internal Server Error", { status: 500 })),
+    );
+    const error = (await apiFetch("/api/x", { auth: false }).catch((e: unknown) => e)) as ApiError;
+    expect(error.message).toBe(SERVER_ERROR);
+  });
+
+  it("keeps the server's own explanation when there is one", async () => {
+    mockApi({ "GET /api/x": { status: 503, body: { detail: "No AI model is installed." } } });
+    const error = (await apiFetch("/api/x", { auth: false }).catch((e: unknown) => e)) as ApiError;
+    expect(error.message).toBe("No AI model is installed.");
+  });
+});
+
+describe("filenameFrom", () => {
+  it("reads the file name of a download", () => {
+    expect(filenameFrom('attachment; filename="CaviNet-report-MR-1-2026-10-05.pdf"', "x.pdf")).toBe(
+      "CaviNet-report-MR-1-2026-10-05.pdf",
+    );
+    expect(filenameFrom("attachment; filename=report.pdf", "x.pdf")).toBe("report.pdf");
+    expect(filenameFrom(null, "x.pdf")).toBe("x.pdf");
+    expect(filenameFrom("inline", "x.pdf")).toBe("x.pdf");
   });
 });

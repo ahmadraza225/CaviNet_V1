@@ -11,12 +11,20 @@ export interface RecordedCall {
 }
 
 /** `binary` sends raw bytes (e.g. a preview PNG) instead of JSON. */
-type Reply = { status?: number; body?: unknown; binary?: { bytes: Uint8Array; type: string } };
+type Reply = {
+  status?: number;
+  body?: unknown;
+  binary?: { bytes: Uint8Array; type: string };
+  headers?: Record<string, string>;
+};
 type Handler = Reply | ((call: RecordedCall) => Reply);
 
-function jsonResponse({ status = 200, body, binary }: Reply): Response {
+function jsonResponse({ status = 200, body, binary, headers = {} }: Reply): Response {
   if (binary) {
-    return new Response(binary.bytes, { status, headers: { "Content-Type": binary.type } });
+    return new Response(binary.bytes, {
+      status,
+      headers: { "Content-Type": binary.type, ...headers },
+    });
   }
   return new Response(status === 204 ? null : JSON.stringify(body ?? {}), {
     status,
@@ -74,6 +82,14 @@ export const admin = makeUser({
 export function session(user: UserSummary): TokenResponse {
   return { access_token: `token-${user.id}`, token_type: "bearer", expires_in: 1800, user };
 }
+
+/** The first bytes of a PDF file, as GET /api/cases/{id}/report sends it. */
+export const pdf = {
+  binary: { bytes: new TextEncoder().encode("%PDF-1.4\n"), type: "application/pdf" },
+  headers: {
+    "Content-Disposition": 'attachment; filename="CaviNet-report-MR-1001-2026-10-05.pdf"',
+  },
+};
 
 /** The first bytes of a PNG file: enough for a fake preview image. */
 export const png = {

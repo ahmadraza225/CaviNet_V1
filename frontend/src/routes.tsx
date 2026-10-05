@@ -6,6 +6,7 @@ import { AuditLogPage } from "./pages/admin/AuditLogPage";
 import { ModelPage } from "./pages/admin/ModelPage";
 import { UsersPage } from "./pages/admin/UsersPage";
 import { ChangePasswordPage } from "./pages/ChangePasswordPage";
+import { ErrorPage } from "./pages/ErrorPage";
 import { CasePage } from "./pages/cases/CasePage";
 import { IndexPage } from "./pages/IndexPage";
 import { LoginPage } from "./pages/LoginPage";
@@ -16,9 +17,10 @@ import { PatientsPage } from "./pages/patients/PatientsPage";
 import { UploadPage } from "./pages/upload/UploadPage";
 
 export const routes: RouteObject[] = [
-  { path: "/login", element: <LoginPage /> },
+  { path: "/login", element: <LoginPage />, errorElement: <ErrorPage /> },
   {
     path: "/",
+    errorElement: <ErrorPage />,
     element: (
       <RequireAuth>
         <Layout />
