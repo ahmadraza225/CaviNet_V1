@@ -12,10 +12,12 @@ __pycache__/
 coverage.xml
 htmlcov/
 
-# Node / frontend
+# Node / frontend / end-to-end test
 node_modules/
 frontend/dist/
 frontend/coverage/
+e2e/test-results/
+e2e/playwright-report/
 
 # Runtime data, backups and model files (never committed)
 data/

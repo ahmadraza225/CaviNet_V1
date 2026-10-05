@@ -6,7 +6,7 @@ import { uploadScan, type CaseDetail } from "../../api/cases";
 import { ApiError } from "../../api/client";
 import { getPatient, listPatients } from "../../api/patients";
 import { formatBytes, MAX_UPLOAD_BYTES } from "../../caseStatus";
-import { Alert, Button } from "../../components/ui";
+import { Alert, Button, Loading } from "../../components/ui";
 import { formatDate, SEX_LABELS } from "../../format";
 import { describeSelection, selectionProblem } from "./selection";
 
@@ -44,6 +44,7 @@ function PatientPicker() {
           Search
         </Button>
       </form>
+      {found.isPending && <Loading>Loading patients…</Loading>}
       {found.isError && <Alert tone="error">{(found.error as Error).message}</Alert>}
       {found.data && found.data.items.length === 0 && (
         <p className="text-sm text-slate-500">
@@ -144,6 +145,7 @@ function UploadForm({ patientId }: { patientId: string }) {
 
   return (
     <div className="space-y-6">
+      {patient.isPending && <Loading>Loading the patient…</Loading>}
       {patient.isError && <Alert tone="error">{(patient.error as Error).message}</Alert>}
       {patient.data && (
         <section aria-label="Patient" className="rounded-lg bg-white p-4 text-sm shadow-sm">

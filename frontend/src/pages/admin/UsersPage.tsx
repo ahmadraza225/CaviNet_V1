@@ -14,7 +14,7 @@ import {
 import { ApiError, type UserSummary } from "../../api/client";
 import { useAuth } from "../../auth/context";
 import { PASSWORD_RULES, passwordProblem } from "../../auth/password";
-import { Alert, Button, SelectField, TextField } from "../../components/ui";
+import { Alert, Button, Loading, SelectField, TextField } from "../../components/ui";
 
 const USERS_KEY = ["admin", "users"];
 const EMPTY_FORM: NewUser = { full_name: "", email: "", role: "doctor", temporary_password: "" };
@@ -246,7 +246,12 @@ function UserRow({
 
 export function UsersPage() {
   const { user: me } = useAuth();
-  const { data: users, isPending, isError } = useQuery({ queryKey: USERS_KEY, queryFn: listUsers });
+  const {
+    data: users,
+    isPending,
+    isError,
+    error,
+  } = useQuery({ queryKey: USERS_KEY, queryFn: listUsers });
   const [showForm, setShowForm] = useState(false);
   const [notice, setNotice] = useState<{ text: string; tone: "success" | "error" } | null>(null);
 
@@ -272,8 +277,12 @@ export function UsersPage() {
         />
       )}
       <section className="overflow-x-auto rounded-lg bg-white shadow-sm">
-        {isPending && <p className="p-6 text-sm text-slate-500">Loading users…</p>}
-        {isError && <p className="p-6 text-sm text-red-700">Could not load users.</p>}
+        {isPending && <Loading className="p-6">Loading users…</Loading>}
+        {isError && (
+          <p role="alert" className="p-6 text-sm text-red-700">
+            Could not load users. {(error as Error).message}
+          </p>
+        )}
         {users && (
           <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
             <thead className="bg-slate-50 text-xs uppercase text-slate-500">

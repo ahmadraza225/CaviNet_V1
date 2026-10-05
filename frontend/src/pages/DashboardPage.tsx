@@ -7,7 +7,7 @@ import { useAuth } from "../auth/context";
 import { SystemStatus } from "../components/SystemStatus";
 import { ResultLabel } from "../components/ResultLabel";
 import { StatusBadge } from "../components/StatusBadge";
-import { Alert, Button } from "../components/ui";
+import { Alert, Button, Loading } from "../components/ui";
 import { UploadCtButton } from "../components/UploadCtButton";
 import { formatDateTime } from "../format";
 
@@ -31,7 +31,11 @@ function StatCards() {
   });
   if (stats.isError) return <Alert tone="error">{(stats.error as Error).message}</Alert>;
   return (
-    <section aria-label="Statistics" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+    <section
+      aria-label="Statistics"
+      aria-busy={stats.isPending}
+      className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5"
+    >
       {STAT_CARDS.map(({ key, label }) => {
         const labelId = `stat-${key}`;
         return (
@@ -71,7 +75,7 @@ function RecentCases() {
           <Alert tone="error">{(cases.error as Error).message}</Alert>
         </div>
       )}
-      {cases.isPending && <p className="p-6 text-sm text-slate-500">Loading recent cases…</p>}
+      {cases.isPending && <Loading className="p-6">Loading recent cases…</Loading>}
       {cases.data && cases.data.length === 0 && (
         <p className="p-6 text-sm text-slate-500">
           No cases yet. Cases appear here once CT scans are uploaded.

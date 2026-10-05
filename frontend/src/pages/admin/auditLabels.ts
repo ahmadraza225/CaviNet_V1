@@ -15,6 +15,7 @@ export const ACTION_LABELS: Record<string, string> = {
   patient_deleted: "Patient deleted",
   scan_uploaded: "Scan uploaded",
   result_viewed: "Result viewed",
+  report_downloaded: "Report downloaded",
 };
 
 export const actionLabel = (action: string) => ACTION_LABELS[action] ?? action;
