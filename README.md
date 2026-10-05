@@ -21,9 +21,20 @@ Final Year Project, Department of Computer Science, Air University Islamabad (20
 | 3 | Patients and the doctor dashboard | ✅ Done |
 | 4 | CT upload, de-identification, case timeline and notifications | ✅ Done |
 | 5 | AI inference engine and results (with a **demo model** until training is done) | ✅ Done |
-| 6 | Training and evaluation toolkit (`cavinet-ml`), tested end to end on synthetic data | ✅ This version |
-| 7 | PDF reports, end-to-end tests, user and developer documentation | Planned |
+| 6 | Training and evaluation toolkit (`cavinet-ml`), tested end to end on synthetic data | ✅ Done |
+| 7 | PDF reports, end-to-end tests, security pass, user and developer documentation | ✅ This version (v0.9-demo) |
 | 8–12 | Model training on the real dataset, integration, optional extras, final release | Planned |
+
+## Documentation
+
+| Document | For |
+|---|---|
+| [User manual](docs/USER_MANUAL.md) | Doctors and administrators using CaviNet (with screenshots) |
+| [Deployment guide](docs/DEPLOYMENT.md) | Installing and running CaviNet on a Windows, macOS or Linux team laptop |
+| [Developer guide](docs/DEVELOPER_GUIDE.md) | Architecture, tests and conventions for changing the code |
+| [Training runbook](docs/TRAINING_RUNBOOK.md) | Training and evaluating the model on a GPU computer |
+| [Traceability](docs/TRACEABILITY.md) | Every requirement mapped to its code and tests |
+| [Changelog](CHANGELOG.md) | What changed in each version |
 
 The full plan, requirements and phase prompts are in the scope document:
 [`docs/scope/CaviNet_Scope_Document_v2.md`](docs/scope/CaviNet_Scope_Document_v2.md)
@@ -47,7 +58,8 @@ cd CaviNet_V1
 make up
 ```
 
-Then open **http://localhost:8080**.
+Then open **http://localhost:8080**. The step-by-step guide for a team laptop (Windows, macOS
+or Linux, with troubleshooting) is [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 The first `make up` downloads and builds everything, including the AI libraries, and trains
 the small demo model. This takes several minutes; later starts take seconds.
@@ -83,7 +95,8 @@ then **Pull** in GitHub Desktop gets new versions; run `make up` again after eac
      = Inconclusive);
    - an explanation in plain language and the disclaimer;
    - the model's validated performance;
-   - a slice viewer.
+   - a slice viewer;
+   - **Download PDF report**: a one-page report to print and sign.
 
    The bell in the header shows the notification, and the dashboard counts update.
 
@@ -160,8 +173,11 @@ make format    # auto-format code
 ```
 
 Backend integration tests run against real PostgreSQL and Redis when `TEST_DATABASE_URL` and
-`TEST_REDIS_URL` are set (CI always runs them). For the frontend dev server, run the API on
-port 8000 and `cd frontend && npm run dev` (http://localhost:5173, `/api` is proxied).
+`TEST_REDIS_URL` are set (CI always runs them). `make e2e` runs the Playwright journey against
+the running stack. For the frontend with hot reload, run `make up`, then
+`cd frontend && VITE_API_PROXY=http://localhost:8080 npm run dev` (http://localhost:5173).
+
+The [developer guide](docs/DEVELOPER_GUIDE.md) explains the architecture, tests and conventions.
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the phase-by-phase Git workflow.
 
@@ -180,7 +196,8 @@ backend/    FastAPI app (api, core, models, services, workers), Alembic migratio
 frontend/   React app, components, pages, tests
 ml/         cavinet_ml package: AI pipeline and training toolkit (`cavinet-ml` CLI)
 models/     Downloaded model bundle (git-ignored)
-docs/       Scope document, traceability, audits and (later) manuals and reports
+docs/       Scope document, manuals and guides, traceability, audits, evaluation reports
+e2e/        Playwright end-to-end test of the doctor's journey
 scripts/    Utility scripts: health wait, backup/restore, dataset audit
 ```
 

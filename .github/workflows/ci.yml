@@ -53,6 +53,8 @@ jobs:
         run: |
           ruff check backend scripts
           ruff format --check backend scripts
+      - name: Traceability table (every core FR has a test, every listed test exists)
+        run: python scripts/check_traceability.py
       - name: Test (unit + integration)
         working-directory: backend
         run: pytest --cov --cov-report=term-missing

@@ -109,6 +109,7 @@ lint: lint-python lint-frontend ## Run every linter and format check
 lint-python:
 	$(VENV_BIN)/ruff check backend ml scripts
 	$(VENV_BIN)/ruff format --check backend ml scripts
+	$(PYTHON) scripts/check_traceability.py
 
 lint-frontend:
 	cd frontend && npm run lint && npm run format:check && npm run typecheck
