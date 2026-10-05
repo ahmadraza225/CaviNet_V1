@@ -16,6 +16,7 @@ export default defineConfig({
     ...devices["Desktop Chrome"],
     baseURL: process.env.E2E_BASE_URL ?? "http://localhost:8080",
     viewport: { width: 1366, height: 900 }, // NFR-5: at least 1280 px wide
+    timezoneId: process.env.E2E_TIMEZONE ?? "Asia/Karachi", // the team's time zone
     acceptDownloads: true,
     actionTimeout: 30_000,
     navigationTimeout: 60_000,
