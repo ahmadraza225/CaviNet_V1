@@ -20,6 +20,13 @@ scope wins, or the scope is updated first with supervisor approval.
 6. **Merge and tag:** squash-merge into `main`, then tag the release (`v0.1`, `v0.2`, …) as listed
    in the phase overview (section 15.1).
 
+## Backend and ML repositories
+
+`backend/` ([CaviNet-Backend](https://github.com/ahmadraza225/CaviNet-Backend)) and `ml/`
+([CaviNet-ML](https://github.com/ahmadraza225/CaviNet-ML)) are git submodules. A change to
+either is committed and pushed in that repository first (its CI runs the tests), then the
+updated folder is committed here in the same phase PR.
+
 ## Definition of done (section 14.3)
 
 - All acceptance criteria of the phase are met and evidenced in the PR.

@@ -53,7 +53,7 @@ The full plan, requirements and phase prompts are in the scope document:
   all run inside Docker.
 
 ```bash
-git clone https://github.com/ahmadraza225/CaviNet_V1.git
+git clone --recurse-submodules https://github.com/ahmadraza225/CaviNet_V1.git
 cd CaviNet_V1
 make up
 ```
@@ -68,6 +68,8 @@ The repository is private. If `git clone` asks for a password, the easiest route
 [GitHub Desktop](https://desktop.github.com/): sign in, choose **Clone repository**, pick
 `CaviNet_V1`, then run `make up` in a terminal opened in that folder. Later, **Fetch origin**
 then **Pull** in GitHub Desktop gets new versions; run `make up` again after each update.
+
+If you cloned without `--recurse-submodules`, `make up` fetches `backend/` and `ml/` for you.
 
 ### Signing in
 
@@ -148,7 +150,7 @@ download, every command in order, expected times, troubleshooting and publishing
 | Rehearse everything on synthetic data | `make rehearsal` (about 2 minutes on a CPU, 5 on a GPU) |
 | 1. Index the dataset | `cavinet-ml index --data dicom-dataset.zip` → `work/manifest.csv` |
 | 2. Preprocess (section 11.1) | `cavinet-ml preprocess --workers 4` → cache + QC report (resumable) |
-| 3. Locked split | `cavinet-ml split` → `ml/splits.json` (committed) |
+| 3. Locked split | `cavinet-ml split` → `ml/splits.json` (committed in CaviNet-ML) |
 | 4. Train | `cavinet-ml train --fold 0` … `--fold 4` (resumes automatically) |
 | 5. Calibrate | `cavinet-ml calibrate` |
 | 6. Baselines | `cavinet-ml baseline`, `cavinet-ml shortcut-check`, `cavinet-ml compare` |
@@ -191,15 +193,30 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the phase-by-phase Git workflow.
 | `postgres` | PostgreSQL 16 | Database |
 | `redis` | Redis 7 | Job queue |
 
+## Repositories
+
+CaviNet is split into three repositories. This one is the main repository: it runs the whole
+system and includes the other two as folders (git submodules).
+
+| Repository | Folder | Contents |
+|---|---|---|
+| [CaviNet_V1](https://github.com/ahmadraza225/CaviNet_V1) (this one) | — | Web app, deployment (`docker-compose.yml`, `Makefile`), end-to-end tests, documentation |
+| [CaviNet-Backend](https://github.com/ahmadraza225/CaviNet-Backend) | `backend/` | FastAPI API, analysis worker, database migrations, backend tests |
+| [CaviNet-ML](https://github.com/ahmadraza225/CaviNet-ML) | `ml/` | `cavinet_ml` AI package and `cavinet-ml` training toolkit, training configs, ML tests |
+
 ```
-backend/    FastAPI app (api, core, models, services, workers), Alembic migrations, tests
+backend/    → CaviNet-Backend: FastAPI app, Alembic migrations, tests
+ml/         → CaviNet-ML: AI pipeline and training toolkit (`cavinet-ml` CLI)
 frontend/   React app, components, pages, tests
-ml/         cavinet_ml package: AI pipeline and training toolkit (`cavinet-ml` CLI)
-models/     Downloaded model bundle (git-ignored)
-docs/       Scope document, manuals and guides, traceability, audits, evaluation reports
 e2e/        Playwright end-to-end test of the doctor's journey
-scripts/    Utility scripts: health wait, backup/restore, dataset audit
+docs/       Scope document, manuals and guides, traceability, audits, evaluation reports
+scripts/    Utility scripts: environment setup, health wait, backup/restore, dataset audit
+models/     Downloaded model bundle (git-ignored)
 ```
+
+Changing backend or ML code: commit and push inside `backend/` or `ml/` (each is its own
+repository with its own CI), then commit the updated folder in this repository so it uses the
+new version. `git pull && git submodule update --init` brings everything up to date.
 
 ## Dataset
 

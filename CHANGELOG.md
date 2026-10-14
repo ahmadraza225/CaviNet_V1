@@ -3,6 +3,17 @@
 All notable changes to CaviNet are recorded here, one section per phase.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Changed
+- The code is split into three repositories: this main repository (web app, deployment,
+  end-to-end tests, documentation), [CaviNet-Backend](https://github.com/ahmadraza225/CaviNet-Backend)
+  and [CaviNet-ML](https://github.com/ahmadraza225/CaviNet-ML), included as the `backend/` and
+  `ml/` git submodules. Paths, `make` commands and `docker compose` are unchanged; clone with
+  `git clone --recurse-submodules` (or let `make up` fetch the submodules).
+- Backend and ML tests run in their own repositories' CI; this repository's CI keeps the
+  frontend, traceability, dependency scan and full-stack jobs.
+
 ## [0.9.0] Phase 07: Reports, end-to-end testing and documentation (v0.9-demo)
 
 The core system is complete: every core requirement (M-01 to M-10) is implemented and traced

@@ -13,7 +13,7 @@ HEALTH_URL := http://localhost:$(CAVINET_HTTP_PORT)/api/health
 
 .DEFAULT_GOAL := help
 
-.PHONY: help env up down logs ps install install-train rehearsal test test-backend test-ml \
+.PHONY: help submodules env up down logs ps install install-train rehearsal test test-backend test-ml \
         test-frontend lint lint-python lint-frontend format seed demo-scan fetch-model benchmark \
         backup restore e2e manual-screenshots
 
@@ -21,12 +21,15 @@ help: ## Show this list of commands
 	@grep -hE '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) | \
 	  awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-19s\033[0m %s\n", $$1, $$2}'
 
+submodules: ## Fetch the backend/ and ml/ repositories (git submodules) if they are missing
+	@[ -f backend/pyproject.toml ] && [ -f ml/pyproject.toml ] || git submodule update --init
+
 env: ## Create .env with generated secrets, or add settings new in .env.example
 	@./scripts/init_env.sh
 
 ## ---- Running the system (needs Docker) ----
 
-up: env ## Build and start every service (and the AI model on first run), then wait
+up: submodules env ## Build and start every service (and the AI model on first run), then wait
 	$(COMPOSE) build
 	@[ -f models/cavinet_model.pth ] || $(MAKE) --no-print-directory fetch-model
 	$(COMPOSE) up -d
@@ -86,7 +89,7 @@ manual-screenshots: ## Refresh the screenshots in docs/USER_MANUAL.md (on a fres
 
 ## ---- Development (needs Python 3.11+ and Node 20+) ----
 
-install: ## Create .venv with backend + ml dev dependencies and install frontend packages
+install: submodules ## Create .venv with backend + ml dev dependencies and install frontend packages
 	$(PYTHON) -m venv $(VENV)
 	$(VENV_BIN)/pip install --upgrade pip
 	$(VENV_BIN)/pip install --index-url $(TORCH_INDEX_URL) "torch>=2.8,<3"
@@ -121,7 +124,7 @@ format: ## Auto-format Python and frontend code
 
 ## ---- Training toolkit (GPU computer; see docs/TRAINING_RUNBOOK.md) ----
 
-install-train: ## Create .venv-train with the training toolkit (GPU: TORCH_INDEX_URL=<CUDA index>)
+install-train: submodules ## Create .venv-train with the training toolkit (GPU: TORCH_INDEX_URL=<CUDA index>)
 	$(PYTHON) -m venv .venv-train
 	.venv-train/bin/pip install --upgrade pip
 	.venv-train/bin/pip install --index-url $(TORCH_INDEX_URL) "torch>=2.8,<3"

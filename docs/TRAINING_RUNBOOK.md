@@ -107,7 +107,7 @@ The repository is private, so sign in first. The simplest way is the GitHub CLI:
 sudo apt install -y gh
 gh auth login                       # GitHub.com → HTTPS → log in with a web browser
 cd ~
-git clone https://github.com/ahmadraza225/CaviNet_V1.git
+git clone --recurse-submodules https://github.com/ahmadraza225/CaviNet_V1.git
 cd CaviNet_V1
 ```
 
@@ -462,7 +462,7 @@ about 30 hours a week, in sessions of at most 12 hours, with 20 GB of saved outp
 2. Add a GitHub token as a Kaggle **secret** (`GITHUB_TOKEN`), then in a cell:
 
    ```bash
-   !git clone https://$GITHUB_TOKEN@github.com/ahmadraza225/CaviNet_V1.git /kaggle/working/CaviNet_V1
+   !git clone --recurse-submodules https://$GITHUB_TOKEN@github.com/ahmadraza225/CaviNet_V1.git /kaggle/working/CaviNet_V1
    %cd /kaggle/working/CaviNet_V1
    !pip install -e "ml[train]"          # PyTorch with CUDA is already installed
    ```

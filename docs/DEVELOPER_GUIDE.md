@@ -77,6 +77,13 @@ writes the timeline. Completed and Failed are final.
 
 ## 3. Repository layout
 
+`backend/` and `ml/` are separate repositories included as git submodules
+([CaviNet-Backend](https://github.com/ahmadraza225/CaviNet-Backend),
+[CaviNet-ML](https://github.com/ahmadraza225/CaviNet-ML)); each has its own CI. To change
+them, commit and push inside the folder, then commit the updated folder here (`git add backend`)
+so the main repository uses that version. `git submodule update --init` checks out the
+versions this repository records.
+
 ```text
 backend/
   app/

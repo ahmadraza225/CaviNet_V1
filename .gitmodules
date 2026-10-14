@@ -1,0 +1,8 @@
+[submodule "backend"]
+	path = backend
+	url = https://github.com/ahmadraza225/CaviNet-Backend.git
+	branch = main
+[submodule "ml"]
+	path = ml
+	url = https://github.com/ahmadraza225/CaviNet-ML.git
+	branch = main

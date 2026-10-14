@@ -96,7 +96,7 @@ make --version
 
 ```bash
 cd ~
-git clone https://github.com/ahmadraza225/CaviNet_V1.git
+git clone --recurse-submodules https://github.com/ahmadraza225/CaviNet_V1.git
 cd CaviNet_V1
 ```
 
@@ -257,6 +257,7 @@ keeping.
 ```bash
 make backup
 git pull            # or: GitHub Desktop > Fetch origin > Pull
+git submodule update --init   # backend/ and ml/ are separate repositories
 make up
 ```
 
