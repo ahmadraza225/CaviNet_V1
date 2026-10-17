@@ -21,7 +21,7 @@ case IDs only; no images, no per-patient clinical values.
 | Layout | `TB/TB_001` … `TB_871`, `NTM/Case_001` … `Case_430` (one folder of `.dcm` slices per patient) and `PatientIndex.xlsx`, as documented |
 | Files | 348,755: 348,754 DICOM slices and `PatientIndex.xlsx` |
 | Size | 91,756,799,590 bytes (91.76 GB) |
-| Checksum | pending: computed during training (the disk was needed for preprocessing first); added in the final Phase 8 commit |
+| Checksum | `8a75abd0e2deeec78acd2b89e92f7952025d92ff93e32ad8f9a7d9913281b6bd`: the SHA-256 of the list of per-file SHA-256s below (348,755 files, all readable) |
 
 The Kaggle zip was extracted by the team before Phase 8 and not kept, so the runbook's zip
 checksum (B4) cannot be recorded. Instead, every file of the extracted copy was hashed (SHA-256,
