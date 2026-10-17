@@ -3,6 +3,7 @@
 
 # Python
 .venv/
+.venv-train/
 __pycache__/
 *.py[cod]
 *.egg-info/

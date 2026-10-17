@@ -56,7 +56,7 @@ Everything below is free. No dataset request or agreement is needed (the dataset
 
 ## Part A: set up the GPU computer
 
-Do **A1** (Ubuntu) **or A2** (Windows), then A3–A6.
+Do **A1** (Ubuntu) **or A2** (Windows), then A3–A6. Without WSL on Windows, follow **A2b**.
 
 ### A1. Ubuntu 22.04
 
@@ -98,6 +98,45 @@ Do **A1** (Ubuntu) **or A2** (Windows), then A3–A6.
 6. **Keep everything inside the Linux home folder** (`~`), never under `/mnt/c/…`: Windows
    drives are many times slower from WSL. The WSL disk lives on drive C:, so C: needs the 150 GB
    free.
+
+### A2b. Windows without WSL
+
+Phase 8 was run this way, on Windows 10 with an 8 GB RTX 4060 Ti, because drive C: was too small
+for WSL. The toolkit handles Windows paths and processes; only the commands differ. The `.sh`
+scripts run in Git Bash (installed with Git for Windows).
+
+1. Install the NVIDIA driver (A2 step 1), Git for Windows and Python 3.11 (python.org installer;
+   if it cannot run, the Python Software Foundation's NuGet package `python` 3.11 is the same
+   Python as a zip file).
+2. Get the code with LF line endings (the shell scripts need them) and the submodules:
+
+   ```bash
+   git -c core.autocrlf=input clone -c core.autocrlf=input --recurse-submodules https://github.com/ahmadraza225/CaviNet_V1.git
+   ```
+
+3. Install the toolkit (PowerShell, in `CaviNet_V1`; the PyTorch index from A4):
+
+   ```powershell
+   <python 3.11 folder>\python.exe -m venv .venv-train
+   .venv-train\Scripts\python -m pip install --index-url https://download.pytorch.org/whl/cu130 "torch>=2.8,<3"
+   .venv-train\Scripts\python -m pip install -e "./ml[train]"
+   $env:PYTHONUTF8 = "1"
+   .venv-train\Scripts\cavinet-ml --version
+   ```
+
+4. Run every command of part C as `.venv-train\Scripts\cavinet-ml …`; `--data` takes the zip or
+   the extracted folder. The rehearsal (A6), in Git Bash:
+
+   ```bash
+   CAVINET_ML=.venv-train/Scripts/cavinet-ml.exe REHEARSAL_LUNGMASK=1 bash scripts/toolkit_rehearsal.sh
+   ```
+
+5. With an 8 GB GPU, preprocess with 3 workers and without PyTorch's GPU memory cache
+   (`$env:PYTORCH_NO_CUDA_MEMORY_CACHING = "1"`, then `cavinet-ml preprocess --workers 3`): with the
+   cache, 3 workers already filled the 8 GB, and Windows then slows down (it borrows system memory)
+   instead of failing.
+6. Do not open files under `work\` in Excel while a command runs: Excel locks them and the
+   command cannot update them.
 
 ### A3. Get the code
 
@@ -293,10 +332,17 @@ rescue a few scans; report persistent failures instead.
 
 ```bash
 cavinet-ml split
-git add ml/splits.json
-git commit -m "Add the locked patient split"
+git -C ml add splits.json
+git -C ml commit -m "Add the locked patient split"
+git -C ml push
+git add ml
+git commit -m "Use the locked patient split"
 git push
 ```
+
+`ml/` is the CaviNet-ML repository (a git submodule): `splits.json` is committed there first, then
+this repository records the new `ml` version. If the phase uses a branch and a pull request
+(section 14.2), commit on that branch in both repositories.
 
 `ml/splits.json` holds only patient IDs: the locked test set (20%, stratified by label, sex,
 age band and scanner manufacturer, seed 42), the 5 development folds, and the excluded patients
@@ -403,7 +449,7 @@ the report and the log.
 ### C10. Commit the results
 
 ```bash
-git add ml/splits.json docs/EVALUATION_REPORT.md docs/figures docs/MODEL_CARD.md docs/audit/evaluation_runs.jsonl
+git add docs/EVALUATION_REPORT.md docs/figures docs/MODEL_CARD.md docs/audit/evaluation_runs.jsonl
 git commit -m "Phase 8: evaluation report, model card and figures"
 git push
 ```
