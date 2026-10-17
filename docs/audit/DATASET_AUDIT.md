@@ -24,12 +24,13 @@ case IDs only; no images, no per-patient clinical values.
 | Checksum | pending: computed during training (the disk was needed for preprocessing first); added in the final Phase 8 commit |
 
 The Kaggle zip was extracted by the team before Phase 8 and not kept, so the runbook's zip
-checksum (B4) cannot be recorded. Instead, every file of the extracted copy was hashed (SHA-256).
-The list of `hash  ./relative/path` lines, byte-sorted, was itself hashed. Any copy of the
-dataset can be checked against it from its root folder (Git Bash or Linux):
+checksum (B4) cannot be recorded. Instead, every file of the extracted copy was hashed (SHA-256,
+binary mode). The list of `hash *./relative/path` lines, byte-sorted by path, was itself hashed.
+Any copy of the dataset can be checked against it from its root folder (Git Bash or Linux;
+`-b` gives the same lines on both):
 
 ```bash
-find . -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum > dicom-dataset.sha256
+find . -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum -b > dicom-dataset.sha256
 sha256sum dicom-dataset.sha256      # must print the fingerprint above
 ```
 
