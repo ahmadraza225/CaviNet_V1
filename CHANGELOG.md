@@ -5,6 +5,38 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added (Phase 8: dataset processing and model training)
+- **The trained model, `model-v1`.** A 5-fold ensemble of 3D ResNet-18 models, each initialised
+  from MedicalNet and trained on the GPU computer by following docs/TRAINING_RUNBOOK.md (section 15.9).
+  - **Data.** The full Kaggle dataset: 1,301 patients (871 TB, 430 NTM), 100% preprocessed with
+    no lung-segmentation fallback.
+  - **Split.** Locked test set of 259 patients; 1,038 development patients in 5 folds; 4 excluded for
+    index problems.
+  - **Cross-validation.** Pooled out-of-fold AUC 0.716 (0.680 to 0.748).
+  - **Locked test set** (evaluated once): AUC 0.766 (0.699 to 0.826), sensitivity 74.0%, specificity 64.0%.
+    H1 and H2 are both supported; the CT model beats the clinical-only model, AUC 0.678, DeLong p = 0.041.
+  - **Shortcut check.** It warns that scan metadata alone reaches AUC 0.695: scanner and label are
+    strongly linked in this dataset.
+  - **Release.** The model file (330 MB) is not committed. It is distributed as the GitHub Release
+    asset `model-v1` (section 11.6); `MODEL_URL` is set in Phase 9.
+- `docs/EVALUATION_REPORT.md` with its figures, `docs/MODEL_CARD.md` and
+  `docs/audit/evaluation_runs.jsonl`. The log has one test-set run.
+- `docs/audit/DATASET_AUDIT.md`:
+  - counts, demographics, symptoms, scanners and acquisition, index problems, and index vs DICOM
+    header disagreements;
+  - preprocessing results and a SHA-256 fingerprint of every dataset file;
+  - how the run differed from the runbook.
+- `ml/splits.json`: the locked split (patient IDs only).
+- Training runbook: A2b, running natively on Windows without WSL.
+
+### Fixed
+- `splits.json` is written with LF line endings on every platform (CaviNet-ML). On Windows it was
+  written with CRLF, so the SHA-256 recorded in each run, the model bundle and the model card would
+  not have matched the committed file.
+- The training virtual environment `.venv-train/` is git-ignored.
+- Training runbook C3 and C10: `ml/` is a git submodule, so `splits.json` is committed in it, not
+  from the main repository.
+
 ### Changed
 - The code is split into three repositories: this main repository (web app, deployment,
   end-to-end tests, documentation), [CaviNet-Backend](https://github.com/ahmadraza225/CaviNet-Backend)
