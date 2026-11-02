@@ -31,6 +31,15 @@ Phase 1 implements no functional requirement; it provides the platform they are 
 | User manual with Playwright screenshots, developer guide, deployment guide | `docs/USER_MANUAL.md`, `docs/images/manual/` (`make manual-screenshots`), `docs/DEVELOPER_GUIDE.md`, `docs/DEPLOYMENT.md` | `e2e/tests/journey.spec.ts` (takes the screenshots) | Implemented (deployment timing on a clean team laptop is checked by hand: `docs/DEPLOYMENT.md` section 15) |
 | This table stays true: every core FR is Implemented with at least one test, and every test named here exists | `scripts/check_traceability.py` | CI job "Backend" step "Traceability table" | Implemented |
 
+## Real-model integration (Phase 9)
+
+| Item | Implemented in | Tests | Status |
+|---|---|---|---|
+| The trained model by default: `make up` installs release model-v1 and replaces a demo model or an older release; a failed download keeps the installed model | `.env.example` (`MODEL_URL`, `MODEL_SHA256`), `scripts/init_env.sh` (fills an empty `MODEL_URL`), `ml/cavinet_ml/fetch.py`, `Makefile` (`up` runs `fetch-model`) | `ml/tests/test_demo_fetch_metrics.py::test_a_url_replaces_an_installed_demo_model`, `test_a_new_release_replaces_the_installed_model`, `test_a_failed_replacement_keeps_the_installed_model`; CI full-stack job (real model, no DEMO banner, model-v1 metrics) | Implemented |
+| Verification on 10 real test-set scans: the application's probability within 0.01 of the toolkit's; analysis time on the team laptop | `ml/cavinet_ml/dataset/verification.py` (`cavinet-ml verification-set`), `scripts/verify_model.py` (`make verify-model`), `docs/verification/` | `ml/tests/test_toolkit_e2e.py::test_verification_set_has_real_zips_and_the_toolkit_probabilities`, `scripts/tests/test_verify_model.py::test_agreeing_scans_pass_and_are_reported`, `test_a_difference_above_the_tolerance_fails`, `test_the_demo_model_is_refused` | Implemented |
+| Thesis tables (dataset, folds, cross-validation, test metrics, baselines, subgroups, hypotheses) | `ml/cavinet_ml/evaluation/tables.py` (`cavinet-ml tables`), `docs/tables/` | `ml/tests/test_toolkit_e2e.py::test_thesis_tables_are_written_from_the_outputs`, `test_tables_need_the_test_results` | Implemented |
+| The end-to-end journey with the installed model (DEMO banner only with the demo model) | `e2e/tests/journey.spec.ts`, `Makefile` (`e2e` passes `E2E_IS_DEMO`) | `e2e/tests/journey.spec.ts`; CI full-stack job | Implemented |
+
 ## Non-functional requirements
 
 | NFR | Requirement (summary) | Implemented in | Tests | Status |

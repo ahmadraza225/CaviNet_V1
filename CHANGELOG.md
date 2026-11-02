@@ -5,6 +5,31 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added (Phase 9: the trained model in the application)
+- **The trained model is the default.** `.env.example` names release model-v1 (`MODEL_URL`,
+  `MODEL_SHA256`), and `make up` installs it: `fetch-model` now replaces an installed demo model,
+  and a model that differs from `MODEL_SHA256`. If the download fails, the installed model is
+  kept. An `.env` with an empty `MODEL_URL` gets the release filled in; `MODEL_URL=none` keeps the
+  demo model.
+- **Verification on real scans.** `cavinet-ml verification-set` copies 5 TB and 5 NTM patients
+  of the locked test set (the first nearest 300 slices) into zips with the toolkit's
+  probabilities; `make verify-model SCANS=<folder>` uploads them through the API, compares the
+  application's probability of TB (tolerance 0.01), times each analysis and writes
+  `docs/verification/`.
+- **Thesis tables.** `cavinet-ml tables` writes `docs/tables/` (CSV files and TABLES.md) from the
+  toolkit's outputs: patients by split, training per fold, cross-validation and calibration,
+  test metrics at 0.50 and at the Youden threshold, baselines, subgroups and hypotheses.
+
+### Changed (Phase 9)
+- The CI full-stack job and the end-to-end journey run with the trained model: no DEMO banner,
+  version model-v1 and the measured test AUC on the result, the PDF and the model page.
+- Documentation: README, user manual and deployment guide describe the trained model as the
+  default and the demo model as the fallback.
+
+### Fixed (Phase 9)
+- CaviNet-ML: pip's `build/` folder, committed by mistake when the repository was split off, is
+  removed and ignored.
+
 ### Added (Phase 8: dataset processing and model training)
 - **The trained model, `model-v1`.** A 5-fold ensemble of 3D ResNet-18 models, each initialised
   from MedicalNet and trained on the GPU computer by following docs/TRAINING_RUNBOOK.md (section 15.9).

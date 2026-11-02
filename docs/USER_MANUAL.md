@@ -41,10 +41,10 @@ a probability, says how confident it is, and explains the result in plain words.
 - It does **not** find or mark cavities or other lesions.
 - It is a **research prototype**, not a medical device.
 
-> **The red "DEMO MODEL: NOT FOR CLINICAL USE" banner.** Until the real model has been trained
-> on the hospital dataset, CaviNet uses a demo model trained on computer-made (synthetic) scans.
-> Its results say **nothing** about a real patient. While the banner is shown, use CaviNet only
-> to practise and to demonstrate it.
+> **The red "DEMO MODEL: NOT FOR CLINICAL USE" banner.** CaviNet normally uses the trained
+> model. If the red banner is shown, a demo model trained on computer-made (synthetic) scans is
+> installed instead: its results say **nothing** about a real patient, so use CaviNet only to
+> practise and to demonstrate it, and ask the administrator to install the trained model.
 
 ## Opening CaviNet
 
