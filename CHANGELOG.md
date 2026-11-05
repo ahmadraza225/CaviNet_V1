@@ -3,7 +3,7 @@
 All notable changes to CaviNet are recorded here, one section per phase.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [1.0.0] Phases 08 and 09: the trained model, in the application (v1.0)
 
 ### Added (Phase 9: the trained model in the application)
 - **The trained model is the default.** `.env.example` names release model-v1 (`MODEL_URL`,
@@ -20,7 +20,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   toolkit's outputs: patients by split, training per fold, cross-validation and calibration,
   test metrics at 0.50 and at the Youden threshold, baselines, subgroups and hypotheses.
 
+### Verified (Phase 9)
+- 10 real patients of the locked test set (5 TB, 5 NTM), uploaded through the application's API:
+  the probability of TB agrees with the training toolkit's for all 10 (9 identical to four
+  decimals, the largest difference 0.0035; tolerance 0.01). Analysis took 35 to 79 s per scan on a
+  4-core CPU (budget 180 s). Report: `docs/verification/MODEL_VERIFICATION.md`.
+- Thesis tables in `docs/tables/`, and user manual screenshots with the trained model.
+
 ### Changed (Phase 9)
+- Version 1.0.0 (backend, ml and frontend).
 - The CI full-stack job and the end-to-end journey run with the trained model: no DEMO banner,
   version model-v1 and the measured test AUC on the result, the PDF and the model page.
 - Documentation: README, user manual and deployment guide describe the trained model as the

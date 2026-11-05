@@ -152,7 +152,7 @@ def compare(rows: list[dict[str, str]], results: list[dict]) -> list[dict]:
     for row, result in zip(rows, results):  # noqa: B905 - strict= needs Python 3.10
         expected = float(row["toolkit_probability"])
         app = result.get("app_probability")
-        difference = None if app is None else abs(app - expected)
+        difference = None if app is None else round(abs(app - expected), 6)
         table.append(
             {
                 "case_id": row["case_id"],

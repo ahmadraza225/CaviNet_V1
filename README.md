@@ -24,7 +24,7 @@ Final Year Project, Department of Computer Science, Air University Islamabad (20
 | 6 | Training and evaluation toolkit (`cavinet-ml`), tested end to end on synthetic data | ✅ Done |
 | 7 | PDF reports, end-to-end tests, security pass, user and developer documentation | ✅ Done (v0.9-demo) |
 | 8 | Training on the real dataset: locked test AUC 0.766 ([evaluation report](docs/EVALUATION_REPORT.md)) | ✅ Done (model-v1) |
-| 9 | The trained model in the application, verified on real scans; thesis tables | In progress (v1.0) |
+| 9 | The trained model in the application, verified on 10 real scans ([verification](docs/verification/MODEL_VERIFICATION.md)); thesis tables ([docs/tables](docs/tables/TABLES.md)) | ✅ This version (v1.0) |
 | 10–12 | Optional extras (heatmaps, symptoms) and the final release | Planned |
 
 ## Documentation
