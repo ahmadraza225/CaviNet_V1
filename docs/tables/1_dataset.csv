@@ -1,0 +1,7 @@
+Characteristic,Development TB,Development NTM,Locked test TB,Locked test NTM,All TB,All NTM
+Patients,698,340,173,86,871,426
+"Age, mean (SD), years",47.5 (18.3),55.3 (17.1),46.6 (18.6),55.4 (16.9),47.3 (18.3),55.3 (17.0)
+Female,198 (28%),131 (39%),48 (28%),33 (38%),246 (28%),164 (38%)
+Scanner: GE,667 (96%),193 (57%),168 (97%),50 (58%),835 (96%),243 (57%)
+Scanner: SIEMENS,10 (1%),30 (9%),1 (1%),7 (8%),11 (1%),37 (9%)
+Scanner: TOSHIBA,21 (3%),117 (34%),4 (2%),29 (34%),25 (3%),146 (34%)

@@ -13,6 +13,9 @@ import { pdfText, repoRoot, saveArtifact, setting, snap } from "./support";
 
 const DISCLAIMER = "Decision support only. Not a diagnosis. Confirm with laboratory tests.";
 const DEMO_BANNER = "DEMO MODEL: NOT FOR CLINICAL USE";
+// `make e2e` says which model is installed: the demo model shows the banner everywhere (FR-05.6),
+// the trained model never does.
+const isDemo = setting("E2E_IS_DEMO", "True") === "True";
 
 const run = Date.now().toString().slice(-6);
 const adminEmail = setting("ADMIN_EMAIL");
@@ -182,7 +185,12 @@ test("doctor's journey: account, patient, upload, result, PDF report, notificati
     await expect(result.getByRole("meter", { name: "Probability of TB" })).toBeVisible();
     await expect(result.getByText(/Confirm with laboratory testing\.|Inconclusive/)).toBeVisible();
     await expect(result.getByText(DISCLAIMER)).toBeVisible();
-    await expect(result.getByText(DEMO_BANNER)).toBeVisible(); // FR-05.6
+    if (isDemo) {
+      await expect(result.getByText(DEMO_BANNER)).toBeVisible(); // FR-05.6
+    } else {
+      await expect(page.getByText(DEMO_BANNER)).toHaveCount(0);
+      await expect(result).toContainText(/Test AUC\s*0\.\d\d/); // validated performance
+    }
     await expect(result.getByRole("slider", { name: "Slice" })).toBeVisible();
     // FR-08.1: every status was reached, in order, each with its time.
     const steps = page.getByRole("list", { name: "Status timeline" }).getByRole("listitem");
@@ -222,11 +230,11 @@ test("doctor's journey: account, patient, upload, result, PDF report, notificati
       "confidence band": /Confidence \d+\.\d% \((High|Moderate|Low)\)/,
       explanation: /Confidence band: (High|Moderate|Low)\./,
       "representative slices": "Representative slices",
-      "model version": /Version demo-/,
+      "model version": isDemo ? /Version demo-/ : /Version model-v\d+/,
       "validated performance": "Test AUC",
       disclaimer: DISCLAIMER,
       "signature line": "Reviewing doctor (name) Signature Date",
-      "demo banner": DEMO_BANNER,
+      ...(isDemo ? { "demo banner": DEMO_BANNER } : { "measured test AUC": /Test AUC 0\.\d\d/ }),
     };
     const missing = Object.entries(required)
       .filter(([, expected]) =>
@@ -259,7 +267,12 @@ test("doctor's journey: account, patient, upload, result, PDF report, notificati
     await expect(page.getByRole("cell", { name: doctor.email }).first()).toBeVisible();
     await snap(page, "12-audit-log");
     await page.getByRole("link", { name: "Model" }).click();
-    await expect(page.getByText(DEMO_BANNER).first()).toBeVisible();
+    if (isDemo) {
+      await expect(page.getByText(DEMO_BANNER).first()).toBeVisible();
+    } else {
+      await expect(page.getByText("A trained (non-demo) model is installed.")).toBeVisible();
+      await expect(page.getByText(DEMO_BANNER)).toHaveCount(0);
+    }
     await snap(page, "13-admin-model");
     await signOut(page);
   });

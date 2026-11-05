@@ -33,6 +33,7 @@ models/*
 *.pt
 
 # Medical images and datasets must never be committed
+/verification/
 *.dcm
 *.nii
 *.nii.gz

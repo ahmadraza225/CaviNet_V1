@@ -36,6 +36,16 @@ while IFS= read -r line || [[ -n "${line}" ]]; do
   fi
 done < "${example}"
 
+# The real model (Phase 9): an .env made while MODEL_URL was empty gets the released model.
+# An .env that names its own model, or MODEL_URL=none for the demo model, is left alone.
+if grep -q "^MODEL_URL=$" "${target}"; then
+  for key in MODEL_URL MODEL_SHA256; do
+    value="$(grep "^${key}=" "${example}" | cut -d= -f2-)"
+    sed -i.bak "s|^${key}=.*|${key}=${value}|" "${target}" && rm -f "${target}.bak"
+  done
+  echo "Set MODEL_URL and MODEL_SHA256 in .env to the trained model (release model-v1)."
+fi
+
 if ${created}; then
   echo "Created .env with freshly generated secrets."
 elif ((${#added[@]})); then

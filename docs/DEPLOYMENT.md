@@ -17,7 +17,7 @@ Using CaviNet once it runs is covered in [USER_MANUAL.md](USER_MANUAL.md).
 6. [Check the demo works](#6-check-the-demo-works)
 7. [Everyday use](#7-everyday-use)
 8. [Settings (.env)](#8-settings-env)
-9. [Installing the trained model](#9-installing-the-trained-model)
+9. [The AI model](#9-the-ai-model)
 10. [Backups](#10-backups)
 11. [Updating to a new version](#11-updating-to-a-new-version)
 12. [Using CaviNet from other computers](#12-using-cavinet-from-other-computers)
@@ -117,8 +117,8 @@ The **first** `make up`:
    the **first administrator's sign-in** (also stored in `.env`);
 2. downloads and builds the software images (most of the time is here; it depends on your
    internet speed);
-3. trains the small **demo AI model** (about 1 to 2 minutes), unless a model is already in
-   `models/`;
+3. downloads the **trained AI model** (about 330 MB) into `models/`, unless it is already
+   there;
 4. starts every service and waits until CaviNet answers.
 
 It ends with:
@@ -167,8 +167,8 @@ Then, as the demo doctor:
 
 `demo-data/synthetic_too_few_slices.zip` is refused on purpose, with the reason shown.
 
-The red **"DEMO MODEL: NOT FOR CLINICAL USE"** banner stays until the trained model is
-installed ([section 9](#9-installing-the-trained-model)).
+If a red **"DEMO MODEL: NOT FOR CLINICAL USE"** banner is shown, the trained model could not
+be downloaded and the demo model is installed instead ([section 9](#9-the-ai-model)).
 
 ## 7. Everyday use
 
@@ -199,32 +199,27 @@ with a text editor, then run `make up`.
 | `DEMO_DOCTOR_EMAIL`, `DEMO_DOCTOR_PASSWORD` | `doctor@cavinet.local`, generated | Account created by `make seed` |
 | `CAVINET_HTTP_PORT` | `8080` | Port of the web app (http://localhost:8080). Change it if 8080 is used by another program |
 | `COOKIE_SECURE` | `false` | Set to `true` only if CaviNet is served over HTTPS |
-| `MODEL_URL`, `MODEL_SHA256` | empty | Where `make fetch-model` downloads the trained model, and its checksum ([section 9](#9-installing-the-trained-model)) |
+| `MODEL_URL`, `MODEL_SHA256` | the trained model (release model-v1) | Where `make up` downloads the AI model, and its checksum ([section 9](#9-the-ai-model)) |
 | `POSTGRES_PASSWORD`, `SECRET_KEY` | generated | Internal secrets. Do not change `POSTGRES_PASSWORD` after the first start (the database keeps the old one). Changing `SECRET_KEY` signs everyone out |
 
 When a new version adds settings, `make up` adds them to your `.env` without touching the
 existing values.
 
-## 9. Installing the trained model
+## 9. The AI model
 
-Until the real model is trained (see [TRAINING_RUNBOOK.md](TRAINING_RUNBOOK.md)), CaviNet uses
-the demo model. When the team publishes the trained model as a GitHub Release:
+`make up` installs the AI model named in `.env`: by default the trained model, release
+[model-v1](https://github.com/ahmadraza225/CaviNet_V1/releases/tag/model-v1) (about 330 MB).
+It replaces a demo model, and keeps an installed model that is already the right one. An
+`.env` made before the trained model existed gets `MODEL_URL` and `MODEL_SHA256` filled in.
 
-1. In `.env`, set `MODEL_URL` to the release file's download link and `MODEL_SHA256` to its
-   SHA-256 checksum (both in the release notes).
-2. Run:
-
-   ```bash
-   make fetch-model FORCE=1
-   make up
-   ```
-
-3. Sign in as an administrator and open **Model**: it shows the trained model's version and
-   test results, and the DEMO banner is gone.
-
-If the download fails or its checksum does not match `MODEL_SHA256`, the file is not used:
-`make fetch-model` says why and installs the **demo model** instead. Check the **Model** page,
-fix the link or checksum, and run both commands again.
+- Sign in as an administrator and open **Model**: it shows the model's version, training date
+  and test results, and says whether it is the demo model.
+- If the download fails or its checksum does not match `MODEL_SHA256`, the file is not used:
+  `make up` says why and keeps the installed model, or installs the **demo model** if there is
+  none. Check your internet connection and run `make up` again.
+- To use the demo model instead, set `MODEL_URL=none` in `.env` and run
+  `make fetch-model FORCE=1` and `make up`.
+- When a newer model is published, put its link and checksum in `.env` and run `make up`.
 
 ## 10. Backups
 

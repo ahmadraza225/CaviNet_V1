@@ -155,7 +155,9 @@ Tooling: **ruff** (lint + format, line length 100) for Python; **ESLint**, **Pre
 | Backend integration | set `TEST_DATABASE_URL` and `TEST_REDIS_URL`, then `make test-backend` | Real PostgreSQL and Redis; CI always runs them (`test_integration.py`) |
 | ML | `make test-ml` | Includes a full synthetic training run on CPU (Phase 6) |
 | Frontend | `make test-frontend` (or `cd frontend && npx vitest`) | Vitest + Testing Library; `renderRoute()` renders the real app at a URL; `mockApi()` fakes `fetch` per `"METHOD /path"` |
-| End-to-end | `make up`, then `make e2e` | Playwright drives Chromium through the section 9.2 journey against the running stack, checks the PDF, fails on any CSP violation; screenshots in `e2e/test-results/screenshots/` |
+| Scripts | `pytest scripts/tests` | `scripts/verify_model.py` against a fake API |
+| End-to-end | `make up`, then `make e2e` | Playwright drives Chromium through the section 9.2 journey against the running stack, checks the PDF, fails on any CSP violation; expects the DEMO banner only when the demo model is installed; screenshots in `e2e/test-results/screenshots/` |
+| Real-model check | `make verify-model SCANS=<folder>` | Real test-set scans through the API against the toolkit's probabilities (training runbook part E) |
 | User manual screenshots | `make manual-screenshots` on a fresh stack | Re-captures `docs/images/manual/` (needs `pdftoppm` for the report page) |
 
 Rules:
@@ -262,15 +264,17 @@ These are requirements (NFR-2, NFR-3), not preferences:
 
 ## 11. Continuous integration
 
-`.github/workflows/ci.yml` runs on every pull request:
+`.github/workflows/ci.yml` runs on every pull request; CaviNet-Backend and CaviNet-ML run their
+own tests in their repositories.
 
 | Job | What it checks |
 |---|---|
-| Backend (ruff + pytest) | Lint, format, the traceability table, unit/API tests, integration tests against PostgreSQL and Redis services; fails below 70% line coverage (NFR-7) |
-| ML package (ruff + pytest) | Lint, tests including the synthetic end-to-end training pipeline (report kept as an artifact); fails below 70% line coverage |
+| Python scripts and traceability | Lint and tests of `scripts/`, and the traceability table |
+| Backend (CaviNet-Backend) | Lint, format, unit/API tests, integration tests against PostgreSQL and Redis services; fails below 70% line coverage (NFR-7) |
+| ML package (CaviNet-ML) | Lint, tests including the synthetic end-to-end training pipeline (report kept as an artifact); fails below 70% line coverage |
 | Frontend (eslint + vitest + build) | Lint, format, type check, tests, production build |
 | Dependency vulnerability scan | `pip-audit` and `npm audit` |
-| Full stack (make up + health check) | `make up` from a fresh checkout; health, security headers and size limits through nginx; sign-in and roles; patient CRUD and log privacy; a synthetic scan analysed to completion; the **Playwright journey** (screenshots, PDF and report kept as the `e2e-journey` artifact); a **backup, delete, restore** round trip; the 300-slice timing (NFR-1) |
+| Full stack (make up + health check) | `make up` from a fresh checkout; health, security headers and size limits through nginx; sign-in and roles; patient CRUD and log privacy; a synthetic scan analysed to completion by the trained model (model-v1, no DEMO banner); the **Playwright journey** (screenshots, PDF and report kept as the `e2e-journey` artifact); a **backup, delete, restore** round trip; the 300-slice timing (NFR-1) |
 
 A PR is merged only when every job is green.
 

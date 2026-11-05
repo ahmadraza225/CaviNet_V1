@@ -1,0 +1,5 @@
+Measure,Before calibration,After calibration
+Pooled out-of-fold AUC (95% CI),0.716 (0.680 to 0.748),same
+Brier score,0.206,0.205
+Expected calibration error,0.110,0.116
+Temperature,1 (none),1.1952
