@@ -1,0 +1,4 @@
+Model,Development AUC (95% CI),Test AUC (95% CI),CT minus model on test (95% CI),DeLong p
+CT model (this work),0.716 (0.680 to 0.748),0.766 (0.699 to 0.826),–,–
+"Clinical-only baseline (age, sex, 12 symptoms)",0.715 (0.682 to 0.746),0.678 (0.607 to 0.742),0.088 (0.004 to 0.173),0.041
+"Shortcut check: metadata-only model (manufacturer, kernel, slice thickness)",0.691 (0.651 to 0.729),0.695 (0.642 to 0.749),0.071 (-0.004 to 0.146),0.062

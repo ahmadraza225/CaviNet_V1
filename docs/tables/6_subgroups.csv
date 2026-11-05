@@ -1,0 +1,9 @@
+Group,Value,Patients,TB,NTM,AUC (95% CI)
+Sex,male,178,125,53,0.762 (0.682 to 0.835)
+Sex,female,81,48,33,0.755 (0.640 to 0.864)
+Age band,<40,84,65,19,0.730 (0.610 to 0.839)
+Age band,40-59,84,58,26,0.790 (0.674 to 0.892)
+Age band,>=60,91,50,41,0.735 (0.631 to 0.840)
+Manufacturer,GE,218,168,50,0.720 (0.630 to 0.803)
+Manufacturer,SIEMENS,8,1,7,too few cases of one class for an AUC
+Manufacturer,TOSHIBA,33,4,29,0.819 (0.603 to 0.983)
