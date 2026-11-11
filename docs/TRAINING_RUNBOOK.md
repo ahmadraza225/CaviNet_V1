@@ -508,6 +508,9 @@ Run these where `work/` is, from the repository folder, with the training enviro
    least 80%. It writes `work/evaluation/heatmap_shares.csv` and `heatmap_check.json` and adds
    the "Heatmap explanation (H4)" section to `docs/EVALUATION_REPORT.md`. It can be stopped and
    resumed. It does not measure the model's accuracy again, so the "test set once" rule holds.
+   Without the dataset on a local computer, run `scripts/kaggle_heatmap_check.py` in a Kaggle
+   notebook (GPU and internet on, dataset `damianhan/dicom-dataset` added); it installs
+   `cavinet-ml`, downloads model-v1 and runs the same command.
 
 ## Troubleshooting
 
