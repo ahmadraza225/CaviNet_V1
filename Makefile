@@ -15,7 +15,7 @@ HEALTH_URL := http://localhost:$(CAVINET_HTTP_PORT)/api/health
 
 .PHONY: help submodules env up down logs ps install install-train rehearsal test test-backend test-ml \
         test-frontend lint lint-python lint-frontend format seed demo-scan fetch-model benchmark \
-        backup restore e2e manual-screenshots
+        backup restore e2e verify-model manual-screenshots
 
 help: ## Show this list of commands
 	@grep -hE '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) | \
@@ -29,9 +29,9 @@ env: ## Create .env with generated secrets, or add settings new in .env.example
 
 ## ---- Running the system (needs Docker) ----
 
-up: submodules env ## Build and start every service (and the AI model on first run), then wait
+up: submodules env ## Build and start every service (installing or updating the AI model), then wait
 	$(COMPOSE) build
-	@[ -f models/cavinet_model.pth ] || $(MAKE) --no-print-directory fetch-model
+	@$(MAKE) --no-print-directory fetch-model
 	$(COMPOSE) up -d
 	@./scripts/wait_for_health.sh $(HEALTH_URL) 300
 	@echo "Open http://localhost:$(CAVINET_HTTP_PORT)"
@@ -57,7 +57,7 @@ demo-scan: ## Write synthetic test CT scans (no real patient) to demo-data/ for 
 
 # Runs as your own user so the model file is yours. USER is set because that user may not exist
 # inside the image (e.g. uid 1001 on CI), and MONAI looks up the user name when it is imported.
-fetch-model: ## Download the model named by MODEL_URL in .env, or build the demo model
+fetch-model: ## Install the model named by MODEL_URL in .env (MODEL_URL=none: the demo model)
 	$(COMPOSE) run --rm --no-deps --user "$$(id -u):$$(id -g)" -e HOME=/tmp -e USER=cavinet \
 	  -e CAVINET_GIT_COMMIT="$$(git rev-parse --short HEAD 2>/dev/null || echo unknown)" worker \
 	  cavinet-ml fetch-model --out /models/cavinet_model.pth $(if $(FORCE),--force,)
@@ -78,7 +78,13 @@ e2e: ## Run the Playwright journey of section 9.2 against the running stack (mak
 	@mkdir -p demo-data
 	$(COMPOSE) exec -T backend python -m app.synthetic_dicom --slices 60 --size 256 \
 	  > demo-data/e2e_synthetic_ct.zip
-	cd e2e && npm ci --no-audit --no-fund && npx playwright install chromium && npx playwright test
+	cd e2e && npm ci --no-audit --no-fund && npx playwright install chromium
+	is_demo="$$($(COMPOSE) exec -T backend python -c \
+	  "from app.services.model_store import model_status; print(model_status()['is_demo'])")" && \
+	  cd e2e && E2E_IS_DEMO="$$is_demo" npx playwright test
+
+verify-model: ## Compare the app with the toolkit on real scans: make verify-model SCANS=verification
+	$(PYTHON) scripts/verify_model.py "$(or $(SCANS),verification)"
 
 manual-screenshots: ## Refresh the screenshots in docs/USER_MANUAL.md (on a fresh stack)
 	E2E_SCREENSHOTS=../docs/images/manual $(MAKE) --no-print-directory e2e

@@ -23,11 +23,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Lint the scripts
+      - name: Lint and test the scripts
         run: |
-          pip install ruff
+          pip install ruff pytest
           ruff check scripts
           ruff format --check scripts
+          pytest -q scripts/tests
       - name: Traceability table (every core FR has a test, every listed test exists)
         run: python scripts/check_traceability.py
 
@@ -202,13 +203,16 @@ jobs:
           test "$status" = completed
           label=$(field '["result"]["label"]' < "$tmp/done.json")
           [ "$label" = TB ] || [ "$label" = NTM ]
-          test "$(field '["result"]["is_demo"]' < "$tmp/done.json")" = True
+          # The released model (MODEL_URL in .env.example), not the demo model (Phase 9).
+          test "$(field '["result"]["is_demo"]' < "$tmp/done.json")" = False
           curl -fsS -H "$auth" "$api/cases/$case_id/result" | tee "$tmp/result.json"
-          test "$(field '["demo_banner"]' < "$tmp/result.json")" = "DEMO MODEL: NOT FOR CLINICAL USE"
+          test "$(field '["demo_banner"]' < "$tmp/result.json")" = None
+          test "$(field '["model"]["version"]' < "$tmp/result.json")" = model-v1
+          test "$(field '["validated_performance"]["cases"]' < "$tmp/result.json")" = 259
           test "$(field '["preview_count"]' < "$tmp/result.json")" = 48
           curl -fsS -H "$auth" -o "$tmp/preview.png" "$api/cases/$case_id/previews/24"
           file "$tmp/preview.png" | grep -q "PNG image"
-          curl -fsS -H "$auth" $api/model/status | grep -q '"is_demo":true'
+          curl -fsS -H "$auth" $api/model/status | grep -q '"is_demo":false'
           curl -fsS -H "$auth" $api/notifications/unread-count | grep -q '"count":1'
           curl -fsS -H "$auth" $api/dashboard/stats | grep -q '"completed_cases":1'
           # A scan with too few slices is refused with the documented reason.

@@ -22,8 +22,10 @@ Final Year Project, Department of Computer Science, Air University Islamabad (20
 | 4 | CT upload, de-identification, case timeline and notifications | ✅ Done |
 | 5 | AI inference engine and results (with a **demo model** until training is done) | ✅ Done |
 | 6 | Training and evaluation toolkit (`cavinet-ml`), tested end to end on synthetic data | ✅ Done |
-| 7 | PDF reports, end-to-end tests, security pass, user and developer documentation | ✅ This version (v0.9-demo) |
-| 8–12 | Model training on the real dataset, integration, optional extras, final release | Planned |
+| 7 | PDF reports, end-to-end tests, security pass, user and developer documentation | ✅ Done (v0.9-demo) |
+| 8 | Training on the real dataset: locked test AUC 0.766 ([evaluation report](docs/EVALUATION_REPORT.md)) | ✅ Done (model-v1) |
+| 9 | The trained model in the application, verified on 10 real scans ([verification](docs/verification/MODEL_VERIFICATION.md)); thesis tables ([docs/tables](docs/tables/TABLES.md)) | ✅ This version (v1.0) |
+| 10–12 | Optional extras (heatmaps, symptoms) and the final release | Planned |
 
 ## Documentation
 
@@ -61,8 +63,8 @@ make up
 Then open **http://localhost:8080**. The step-by-step guide for a team laptop (Windows, macOS
 or Linux, with troubleshooting) is [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
-The first `make up` downloads and builds everything, including the AI libraries, and trains
-the small demo model. This takes several minutes; later starts take seconds.
+The first `make up` downloads and builds everything, including the AI libraries and the
+trained AI model (about 330 MB). This takes several minutes; later starts take seconds.
 
 The repository is private. If `git clone` asks for a password, the easiest route is
 [GitHub Desktop](https://desktop.github.com/): sign in, choose **Clone repository**, pick
@@ -105,15 +107,18 @@ If you cloned without `--recurse-submodules`, `make up` fetches `backend/` and `
 Uploaded scans are checked (CT, axial, at least 50 slices, slices at most 5 mm apart) and
 de-identified before they are stored.
 
-### The AI model and the DEMO banner
+### The AI model
 
-- Until the real model is trained (Phase 8), CaviNet uses a **demo model** trained in about a
-  minute on synthetic volumes. Its results say nothing about real patients.
-- While it is installed, every screen shows **"DEMO MODEL: NOT FOR CLINICAL USE"**, and demo
-  results carry a **Demo** badge.
-- `make up` installs the demo model automatically when `models/` has no model.
-- Once the trained model is published, set `MODEL_URL` (and `MODEL_SHA256`) in `.env`, then run
-  `make fetch-model FORCE=1` and `make up`.
+- CaviNet uses the **trained model** (release
+  [model-v1](https://github.com/ahmadraza225/CaviNet_V1/releases/tag/model-v1)): five 3D
+  ResNet-18 models trained on 1,038 patients and tested once on 259 others (AUC 0.766). `make up`
+  downloads it (`MODEL_URL` and `MODEL_SHA256` in `.env`) and replaces a demo model.
+- The **demo model** (`MODEL_URL=none` in `.env`, or when the download fails and no model is
+  installed) is trained in about a minute on synthetic volumes. While it is installed, every
+  screen shows **"DEMO MODEL: NOT FOR CLINICAL USE"**, and its results say nothing about real
+  patients.
+- `make verify-model SCANS=<folder>` checks the installed model through the application on
+  real test-set scans ([docs/verification](docs/verification/)).
 - Administrators see the installed model under **Model**: version, training date, demo or
   trained, and test results.
 - `make benchmark` times the analysis of a synthetic 300-slice scan on this computer. The
@@ -128,7 +133,7 @@ de-identified before they are stored.
 | `make ps` / `make logs` | Show service status / follow logs |
 | `make seed` | Create the demo doctor account |
 | `make demo-scan` | Write synthetic test scans to `demo-data/` for trying uploads |
-| `make fetch-model` | Download the model named by `MODEL_URL` in `.env`, or build the demo model (`FORCE=1` replaces an installed model) |
+| `make fetch-model` | Install the model named by `MODEL_URL` in `.env` (`make up` runs it; `MODEL_URL=none`: the demo model; `FORCE=1` replaces an installed model) |
 | `make benchmark` | Time the analysis of a synthetic 300-slice scan (needs `make up`) |
 | `make backup` | Save the database and stored files to `backups/<timestamp>/` |
 | `make restore BACKUP=backups/<timestamp>` | Restore a backup (replaces current data) |

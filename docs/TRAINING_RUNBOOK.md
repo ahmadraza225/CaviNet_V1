@@ -17,6 +17,7 @@ refuses a second run and records every attempt in `docs/audit/evaluation_runs.js
 - [Part B: Kaggle token and download](#part-b-kaggle-token-and-download)
 - [Part C: run the pipeline, step by step](#part-c-run-the-pipeline-step-by-step)
 - [Part D: publish the model as a GitHub Release](#part-d-publish-the-model-as-a-github-release)
+- [Part E: after training (Phase 9)](#part-e-after-training-phase-9)
 - [Troubleshooting](#troubleshooting)
 - [Last resort: Kaggle's free GPU](#last-resort-kaggles-free-gpu)
 - [What to commit, and what never to commit](#what-to-commit-and-what-never-to-commit)
@@ -469,13 +470,32 @@ git push
 3. In `.env.example` (committed) and your `.env`, set
    `MODEL_URL=https://github.com/ahmadraza225/CaviNet_V1/releases/download/model-v1/cavinet_model.pth`
    and `MODEL_SHA256=<the checksum from step 1>`.
-4. On the team laptop: `make fetch-model FORCE=1`, then open the admin **Model** page: the DEMO
-   banner is gone and the real test metrics are shown.
+4. On the team laptop: `make up` installs the new model (a different `MODEL_SHA256` replaces
+   the installed one); the admin **Model** page shows its version and test metrics.
 
-> **The repository is private.** Downloading a private repository's release asset needs a
-> GitHub login, and `make fetch-model` does not send one yet (Phase 9 integrates the real model).
-> Until then: download `cavinet_model.pth` from the release page in a signed-in browser, put it
-> at `models/cavinet_model.pth` on the laptop, and the worker uses it for the next scan.
+## Part E: after training (Phase 9)
+
+Run these where `work/` is, from the repository folder, with the training environment on.
+
+1. **Thesis tables.** `cavinet-ml tables` writes `docs/tables/` (one CSV per table and
+   `TABLES.md`) from the outputs of part C. It only reads them; nothing is evaluated again.
+   Commit `docs/tables/`.
+2. **Verification scans.** On the computer that has the dataset:
+
+   ```bash
+   cavinet-ml verification-set --data <dataset zip or folder> --out verification
+   ```
+
+   It copies 5 TB and 5 NTM patients of the locked test set into `verification/<patient>.zip`
+   (the first is the scan nearest 300 slices, for the timing check) and writes
+   `verification/expected.csv` with the toolkit's probability for each. These are **real
+   scans**: `verification/` is git-ignored; copy the folder to the team laptop (USB drive or a
+   private cloud folder) and delete it after the check.
+3. **Check the application.** On the team laptop, with CaviNet running and the trained model
+   installed: `make seed`, then `make verify-model SCANS=<path to verification>`. It uploads
+   each scan through the application, compares its probability of TB with the toolkit's
+   (they must agree within 0.01), times each analysis and writes
+   `docs/verification/MODEL_VERIFICATION.md`. Commit that folder.
 
 ## Troubleshooting
 
