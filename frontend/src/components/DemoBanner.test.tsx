@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { DEMO_BANNER } from "../navigation";
@@ -38,7 +38,8 @@ describe("DEMO banner on every screen (FR-05.6)", () => {
     renderRoute("/");
 
     await screen.findByRole("heading", { name: "Dashboard" });
-    expect(api.callsTo("GET", "/api/model/status")).toHaveLength(1);
+    // The status request starts just after the first render: wait for it, then for its answer.
+    await waitFor(() => expect(api.callsTo("GET", "/api/model/status")).toHaveLength(1));
     expect(screen.queryByText(DEMO_BANNER)).not.toBeInTheDocument();
   });
 
