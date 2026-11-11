@@ -96,7 +96,8 @@ jobs:
 
   stack:
     name: Full stack (make up + health check)
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest is now 26.04, which Playwright 1.56 cannot install Chromium on.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
