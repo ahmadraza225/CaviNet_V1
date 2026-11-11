@@ -212,6 +212,13 @@ jobs:
           test "$(field '["preview_count"]' < "$tmp/result.json")" = 48
           curl -fsS -H "$auth" -o "$tmp/preview.png" "$api/cases/$case_id/previews/24"
           file "$tmp/preview.png" | grep -q "PNG image"
+          # Phase 10 (M-11): a heatmap overlay per preview, the 3 top slices and the label.
+          test "$(field '["heatmap"]["count"]' < "$tmp/result.json")" = 48
+          test "$(field '["heatmap"]["label"]' < "$tmp/result.json")" = \
+            "Regions that most influenced the prediction. This is not a lesion marker."
+          test "$(field '["heatmap"]["top"].__len__()' < "$tmp/result.json")" = 3
+          curl -fsS -H "$auth" -o "$tmp/heatmap.png" "$api/cases/$case_id/heatmaps/24"
+          file "$tmp/heatmap.png" | grep -q "PNG image.*RGBA"
           curl -fsS -H "$auth" $api/model/status | grep -q '"is_demo":false'
           curl -fsS -H "$auth" $api/notifications/unread-count | grep -q '"count":1'
           curl -fsS -H "$auth" $api/dashboard/stats | grep -q '"completed_cases":1'

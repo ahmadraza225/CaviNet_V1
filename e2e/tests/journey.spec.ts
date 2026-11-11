@@ -13,6 +13,7 @@ import { pdfText, repoRoot, saveArtifact, setting, snap } from "./support";
 
 const DISCLAIMER = "Decision support only. Not a diagnosis. Confirm with laboratory tests.";
 const DEMO_BANNER = "DEMO MODEL: NOT FOR CLINICAL USE";
+const HEATMAP_LABEL = "Regions that most influenced the prediction. This is not a lesion marker.";
 // `make e2e` says which model is installed: the demo model shows the banner everywhere (FR-05.6),
 // the trained model never does.
 const isDemo = setting("E2E_IS_DEMO", "True") === "True";
@@ -192,6 +193,9 @@ test("doctor's journey: account, patient, upload, result, PDF report, notificati
       await expect(result).toContainText(/Test AUC\s*0\.\d\d/); // validated performance
     }
     await expect(result.getByRole("slider", { name: "Slice" })).toBeVisible();
+    // FR-11.2/11.3: the heatmap toggle, its label and the top slices.
+    await expect(result.getByText(HEATMAP_LABEL)).toBeVisible();
+    await expect(result.getByRole("group", { name: "Top heatmap slices" })).toBeVisible();
     // FR-08.1: every status was reached, in order, each with its time.
     const steps = page.getByRole("list", { name: "Status timeline" }).getByRole("listitem");
     const order = ["Uploaded", "Validating", "Queued", "Preprocessing", "Analysing", "Completed"];
@@ -201,6 +205,15 @@ test("doctor's journey: account, patient, upload, result, PDF report, notificati
       await expect(steps.nth(index)).toHaveAttribute("data-state", "done");
     }
     await snap(page, "08-result", { fullPage: true });
+    await result
+      .getByRole("group", { name: "Top heatmap slices" })
+      .getByRole("button")
+      .first()
+      .click();
+    await result.getByRole("checkbox", { name: /Show heatmap \(result (TB|NTM)\)/ }).check();
+    await expect(result.getByRole("img", { name: /Heatmap over slice \d+/ })).toBeVisible();
+    await expect(result.getByText("Top heatmap slice 1")).toBeVisible();
+    await snap(page, "14-heatmap");
   });
 
   await test.step("the doctor downloads the PDF report with every FR-07.2 item (FR-07.1)", async () => {
@@ -232,6 +245,8 @@ test("doctor's journey: account, patient, upload, result, PDF report, notificati
       "representative slices": "Representative slices",
       "model version": isDemo ? /Version demo-/ : /Version model-v\d+/,
       "validated performance": "Test AUC",
+      heatmap: /Heatmap: what the model looked at \(result (TB|NTM)\)/,
+      "heatmap label": HEATMAP_LABEL,
       disclaimer: DISCLAIMER,
       "signature line": "Reviewing doctor (name) Signature Date",
       ...(isDemo ? { "demo banner": DEMO_BANNER } : { "measured test AUC": /Test AUC 0\.\d\d/ }),

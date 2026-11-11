@@ -79,7 +79,17 @@ export interface AiResult {
   step_seconds: Record<string, number>;
   lung_volume_ml: number | null;
   preview_count: number;
+  heatmap?: HeatmapInfo | null;
   completed_at: string | null;
+}
+
+/** M-11 (FR-11.1 to FR-11.3): the Grad-CAM overlays of a case. */
+export interface HeatmapInfo {
+  label: string;
+  target: "TB" | "NTM";
+  count: number;
+  top: number[];
+  lung_share: number | null;
 }
 
 export interface CaseDetail {
@@ -119,6 +129,11 @@ export function downloadReport(id: string): Promise<DownloadedFile> {
 /** FR-06.4: preview slice `index` (0 = nearest the head) as an object URL for <img>. */
 export async function getPreviewUrl(id: string, index: number): Promise<string> {
   return URL.createObjectURL(await apiFetchBlob(`/api/cases/${id}/previews/${index}`));
+}
+
+/** FR-11.2: the transparent heatmap overlay of preview slice `index`, as an object URL. */
+export async function getHeatmapUrl(id: string, index: number): Promise<string> {
+  return URL.createObjectURL(await apiFetchBlob(`/api/cases/${id}/heatmaps/${index}`));
 }
 
 export const NETWORK_ERROR =
