@@ -25,7 +25,7 @@ Final Year Project, Department of Computer Science, Air University Islamabad (20
 | 7 | PDF reports, end-to-end tests, security pass, user and developer documentation | ✅ Done (v0.9-demo) |
 | 8 | Training on the real dataset: locked test AUC 0.766 ([evaluation report](docs/EVALUATION_REPORT.md)) | ✅ Done (model-v1) |
 | 9 | The trained model in the application, verified on 10 real scans ([verification](docs/verification/MODEL_VERIFICATION.md)); thesis tables ([docs/tables](docs/tables/TABLES.md)) | ✅ Done (v1.0) |
-| 10 | Heatmap explanation (optional): Grad-CAM overlay in the viewer and the PDF; H4 on the test set | In progress |
+| 10 | Heatmap explanation (optional): Grad-CAM overlay in the viewer and the PDF; H4 on the test set (not supported: 33% vs 80%) | Done |
 | 11–12 | Symptom-assisted prediction (optional) and the final release | Planned |
 
 ## Documentation

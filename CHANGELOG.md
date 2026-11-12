@@ -17,7 +17,9 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `heatmap` on the result and `GET /api/cases/{id}/heatmaps/{index}`.
 - **H4 check** (FR-11.4). `cavinet-ml heatmap-check` measures the share of heatmap energy inside
   the lung mask on the locked test set and adds the "Heatmap explanation (H4)" section to the
-  evaluation report.
+  evaluation report. Result on the 259 test patients: mean 33.0% (95% CI 32.1% to 34.0%),
+  target 80%, so **H4 is not supported**. Files: `docs/audit/heatmap_check.json` and
+  `docs/audit/heatmap_shares.csv`.
 
 ## [1.0.0] Phases 08 and 09: the trained model, in the application (v1.0)
 

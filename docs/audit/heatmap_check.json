@@ -1,0 +1,19 @@
+{
+  "created_at": "2026-11-12T16:59:33+00:00",
+  "model_version": "model-v1",
+  "is_demo": false,
+  "n": 259,
+  "failed": {},
+  "target": 0.8,
+  "mean": 0.33047533976833976,
+  "ci": [
+    0.3212278461389962,
+    0.33967734121621623
+  ],
+  "median": 0.340996,
+  "minimum": 0.118886,
+  "at_least_target": 0,
+  "supported": false,
+  "mean_TB": 0.34395971098265893,
+  "mean_NTM": 0.30334980232558134
+}
