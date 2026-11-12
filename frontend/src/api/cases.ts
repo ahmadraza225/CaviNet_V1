@@ -80,8 +80,43 @@ export interface AiResult {
   lung_volume_ml: number | null;
   preview_count: number;
   heatmap?: HeatmapInfo | null;
+  /** M-12: symptoms entered at upload (null = not entered) and the combined result. */
+  symptoms?: string[] | null;
+  combined?: CombinedResult | null;
+  combined_note?: string | null;
   completed_at: string | null;
 }
+
+/** M-12 (FR-12.2, FR-12.3): the CT result combined with age, sex and symptoms. */
+export interface CombinedResult {
+  predicted_class: "TB" | "NTM";
+  probability_tb_pct: number;
+  confidence_pct: number;
+  band: ConfidenceBand;
+  inconclusive: boolean;
+  explanation: string;
+  age: number | null;
+  sex: string | null;
+  symptoms: string[];
+  fusion_version: string;
+  is_demo: boolean;
+}
+
+/** FR-12.1: the 12 symptoms of the dataset, in its order (keys sent to the API). */
+export const SYMPTOMS: { key: string; label: string }[] = [
+  { key: "chest_pain", label: "Chest pain" },
+  { key: "cough", label: "Cough" },
+  { key: "expectoration", label: "Expectoration" },
+  { key: "fever", label: "Fever" },
+  { key: "chest_tightness", label: "Chest tightness" },
+  { key: "haemoptysis", label: "Haemoptysis" },
+  { key: "gasp", label: "Gasp" },
+  { key: "dyspnoea", label: "Dyspnoea" },
+  { key: "chills", label: "Chills" },
+  { key: "fatigue", label: "Fatigue" },
+  { key: "night_sweats", label: "Night sweats" },
+  { key: "weight_loss", label: "Weight loss" },
+];
 
 /** M-11 (FR-11.1 to FR-11.3): the Grad-CAM overlays of a case. */
 export interface HeatmapInfo {
@@ -101,7 +136,7 @@ export interface CaseDetail {
   completed_at: string | null;
   failure_reason: string | null;
   timeline: TimelineEntry[];
-  upload: { kind: "zip" | "dcm"; files: number; bytes: number };
+  upload: { kind: "zip" | "dcm"; files: number; bytes: number; symptoms?: string[] | null };
   scan: ScanDetails | null;
   result: CaseResult | null;
 }
@@ -152,6 +187,7 @@ function send(
   files: File[],
   onProgress: (fraction: number) => void,
   signal?: AbortSignal,
+  symptoms?: string[] | null,
 ): Promise<XhrResult> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -175,6 +211,7 @@ function send(
     xhr.onabort = () => reject(new ApiError(0, UPLOAD_CANCELLED, "cancelled"));
     signal?.addEventListener("abort", () => xhr.abort());
     const form = new FormData();
+    if (symptoms) form.append("symptoms", JSON.stringify(symptoms));
     for (const file of files) form.append("files", file, file.name);
     xhr.send(form);
   });
@@ -183,19 +220,21 @@ function send(
 /**
  * FR-04.1: upload one .zip or several .dcm files for a patient. Uses XMLHttpRequest because
  * fetch cannot report upload progress. Resolves with the new case (status "queued", or
- * "failed" with the reason); rejects with an ApiError for refused requests.
+ * "failed" with the reason); rejects with an ApiError for refused requests. `symptoms`
+ * (FR-12.1): the ticked symptom keys; null or undefined when none were entered.
  */
 export async function uploadScan(
   patientId: string,
   files: File[],
   onProgress: (fraction: number) => void,
   signal?: AbortSignal,
+  symptoms?: string[] | null,
 ): Promise<CaseDetail> {
   const url = `/api/patients/${patientId}/cases`;
   if (!getAccessToken()) await refreshSession();
-  let result = await send(url, files, onProgress, signal);
+  let result = await send(url, files, onProgress, signal, symptoms);
   if (result.status === 401 && (await refreshSession())) {
-    result = await send(url, files, onProgress, signal);
+    result = await send(url, files, onProgress, signal, symptoms);
   }
   if (result.status === 413 && result.body === null) {
     // nginx's own refusal (an HTML page) when the body is over its limit.

@@ -2,8 +2,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState, type DragEvent, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
-import { uploadScan, type CaseDetail } from "../../api/cases";
+import { SYMPTOMS, uploadScan, type CaseDetail } from "../../api/cases";
 import { ApiError } from "../../api/client";
+import { getModelStatus } from "../../api/model";
 import { getPatient, listPatients } from "../../api/patients";
 import { formatBytes, MAX_UPLOAD_BYTES } from "../../caseStatus";
 import { Alert, Button, Loading } from "../../components/ui";
@@ -77,6 +78,71 @@ function PatientPicker() {
   );
 }
 
+/**
+ * FR-12.1: optional symptoms for the symptom-assisted result (M-12). Shown only when the
+ * installed model has symptom-assisted parameters. Off: only the CT result is shown. On: the
+ * ticked symptoms are sent (none ticked = none of these symptoms present).
+ */
+function SymptomsSection({
+  enabled,
+  onEnabled,
+  ticked,
+  onTicked,
+  disabled,
+}: {
+  enabled: boolean;
+  onEnabled: (value: boolean) => void;
+  ticked: string[];
+  onTicked: (value: string[]) => void;
+  disabled: boolean;
+}) {
+  function toggle(key: string, checked: boolean) {
+    const next = checked ? [...ticked, key] : ticked.filter((k) => k !== key);
+    onTicked(SYMPTOMS.map((s) => s.key).filter((k) => next.includes(k)));
+  }
+  return (
+    <fieldset className="space-y-3 rounded-lg border border-slate-200 p-4">
+      <legend className="px-1 text-sm font-medium text-slate-700">Symptoms (optional)</legend>
+      <label className="flex items-center gap-2 text-sm text-slate-700">
+        <input
+          type="checkbox"
+          checked={enabled}
+          disabled={disabled}
+          aria-describedby="symptoms-hint"
+          onChange={(event) => onEnabled(event.target.checked)}
+        />
+        Add the patient&apos;s symptoms for a symptom-assisted result
+      </label>
+      <p id="symptoms-hint" className="text-xs text-slate-500">
+        Age and sex come from the patient record. The result page then shows the CT-only result and
+        the result combined with age, sex and symptoms. Leave this off to see only the CT result.
+      </p>
+      {enabled && (
+        <div
+          role="group"
+          aria-label="Symptoms present"
+          className="grid grid-cols-2 gap-2 sm:grid-cols-3"
+        >
+          {SYMPTOMS.map((symptom) => (
+            <label key={symptom.key} className="flex items-center gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={ticked.includes(symptom.key)}
+                disabled={disabled}
+                onChange={(event) => toggle(symptom.key, event.target.checked)}
+              />
+              {symptom.label}
+            </label>
+          ))}
+          <p className="col-span-full text-xs text-slate-500">
+            Tick every symptom that is present. Leaving all unticked means none of them.
+          </p>
+        </div>
+      )}
+    </fieldset>
+  );
+}
+
 type Phase =
   | { name: "idle" }
   | { name: "uploading"; fraction: number }
@@ -92,6 +158,14 @@ function UploadForm({ patientId }: { patientId: string }) {
   const [problem, setProblem] = useState<string | null>(null);
   const [phase, setPhase] = useState<Phase>({ name: "idle" });
   const [dragging, setDragging] = useState(false);
+  const [symptomsOn, setSymptomsOn] = useState(false);
+  const [symptoms, setSymptoms] = useState<string[]>([]);
+  const model = useQuery({
+    queryKey: ["model", "status"],
+    queryFn: getModelStatus,
+    staleTime: 60_000,
+  });
+  const symptomAssisted = model.data?.symptom_assisted === true;
   const abort = useRef<AbortController | null>(null);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -123,6 +197,7 @@ function UploadForm({ patientId }: { patientId: string }) {
         (fraction) =>
           setPhase(fraction >= 1 ? { name: "checking" } : { name: "uploading", fraction }),
         abort.current.signal,
+        symptomAssisted && symptomsOn ? symptoms : null,
       );
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["patient", patientId] });
@@ -201,6 +276,16 @@ function UploadForm({ patientId }: { patientId: string }) {
             <p className="mt-2 text-sm text-slate-700">Selected: {describeSelection(files)}</p>
           )}
         </div>
+
+        {symptomAssisted && (
+          <SymptomsSection
+            enabled={symptomsOn}
+            onEnabled={setSymptomsOn}
+            ticked={symptoms}
+            onTicked={setSymptoms}
+            disabled={busy}
+          />
+        )}
 
         {problem && <Alert tone="error">{problem}</Alert>}
 

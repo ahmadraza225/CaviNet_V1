@@ -1,8 +1,8 @@
 /**
  * The full journey of scope section 9.2, through the browser, against the running stack:
  * the admin creates a doctor, the doctor changes the temporary password, creates a patient,
- * uploads a synthetic scan, sees the result, downloads the PDF report and reads the
- * notification. Screenshots taken on the way illustrate docs/USER_MANUAL.md.
+ * uploads a synthetic scan with the patient's symptoms, sees the CT-only and the
+ * symptom-assisted results, downloads the PDF report and reads the notification. Screenshots taken on the way illustrate docs/USER_MANUAL.md.
  */
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -14,6 +14,8 @@ import { pdfText, repoRoot, saveArtifact, setting, snap } from "./support";
 const DISCLAIMER = "Decision support only. Not a diagnosis. Confirm with laboratory tests.";
 const DEMO_BANNER = "DEMO MODEL: NOT FOR CLINICAL USE";
 const HEATMAP_LABEL = "Regions that most influenced the prediction. This is not a lesion marker.";
+const SYMPTOMS_TOGGLE = "Add the patient's symptoms for a symptom-assisted result";
+const COMBINED = "CT + age, sex and symptoms";
 // `make e2e` says which model is installed: the demo model shows the banner everywhere (FR-05.6),
 // the trained model never does.
 const isDemo = setting("E2E_IS_DEMO", "True") === "True";
@@ -168,6 +170,11 @@ test("doctor's journey: account, patient, upload, result, PDF report, notificati
     await expect(page.getByRole("heading", { name: "Upload CT scan" })).toBeVisible();
     await page.getByLabel("CT scan files").setInputFiles(scanFile);
     await expect(page.getByText(/^Selected:/)).toBeVisible();
+    // FR-12.1: the symptoms present (age and sex come from the patient record).
+    await page.getByRole("checkbox", { name: SYMPTOMS_TOGGLE }).check();
+    const symptoms = page.getByRole("group", { name: "Symptoms present" });
+    await symptoms.getByRole("checkbox", { name: "Cough" }).check();
+    await symptoms.getByRole("checkbox", { name: "Night sweats" }).check();
     await snap(page, "06-upload");
     await page.getByRole("button", { name: "Upload scan" }).click();
     await page.waitForURL(/\/cases\/[0-9a-f-]{36}$/, { timeout: 120_000 });
@@ -184,8 +191,17 @@ test("doctor's journey: account, patient, upload, result, PDF report, notificati
     await expect(result.getByText("Predicted class")).toBeVisible();
     await expect(result.getByText("Probability of TB")).toBeVisible();
     await expect(result.getByRole("meter", { name: "Probability of TB" })).toBeVisible();
-    await expect(result.getByText(/Confirm with laboratory testing\.|Inconclusive/)).toBeVisible();
+    await expect(
+      result.getByText(/Confirm with laboratory testing\.|Inconclusive/).first(),
+    ).toBeVisible();
     await expect(result.getByText(DISCLAIMER)).toBeVisible();
+    // FR-12.3: the CT-only result and the result combined with age, sex and symptoms.
+    await expect(result.getByRole("heading", { name: "CT only" })).toBeVisible();
+    const combined = result.getByRole("region", { name: COMBINED });
+    await expect(combined.getByText("Probability of TB")).toBeVisible();
+    await expect(combined).toContainText(
+      /Combined with age \(\d+ years\), female and the symptoms entered at upload: Cough, Night sweats\./,
+    );
     if (isDemo) {
       await expect(result.getByText(DEMO_BANNER)).toBeVisible(); // FR-05.6
     } else {
@@ -238,10 +254,13 @@ test("doctor's journey: account, patient, upload, result, PDF report, notificati
       sex: "Female",
       "scan details": "Scan details",
       "slice count": "Slices 60",
-      result: /Result (TB|NTM)|Inconclusive \(leans towards (TB|NTM)\)/,
-      probability: /Probability of TB \d+\.\d%/,
-      "confidence band": /Confidence \d+\.\d% \((High|Moderate|Low)\)/,
-      explanation: /Confidence band: (High|Moderate|Low)\./,
+      // FR-12.3: both results, in one table, and what the combined one used.
+      "CT-only result": /CT only (TB|NTM|Inconclusive \(leans towards (TB|NTM)\)) \d+\.\d%/,
+      "combined result": /CT \+ symptoms (TB|NTM|Inconclusive \(leans towards (TB|NTM)\)) \d+\.\d%/,
+      "probability and confidence": /Probability of TB\s*Confidence/,
+      "confidence band": /\d+\.\d% \((High|Moderate|Low)\)/,
+      explanation: /CT only: confidence band (High|Moderate|Low)\./,
+      symptoms: /age \(\d+ years\), sex \(female\) and the symptoms[\s\S]*Cough, Night sweats/,
       "representative slices": "Representative slices",
       "model version": isDemo ? /Version demo-/ : /Version model-v\d+/,
       "validated performance": "Test AUC",

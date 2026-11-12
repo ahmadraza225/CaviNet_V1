@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 
-import { getResult, type AiResult, type ConfidenceBand } from "../api/cases";
+import { getResult, type AiResult, type CombinedResult, type ConfidenceBand } from "../api/cases";
 import { formatDateTime } from "../format";
 import { DEMO_BANNER } from "../navigation";
 import { ReportButton } from "./ReportButton";
@@ -26,6 +26,58 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
+const SEX = (sex: string | null) =>
+  sex === "male" ? "male" : sex === "female" ? "female" : "unknown sex";
+
+/** M-12 (FR-12.3): the result combined with age, sex and the symptoms entered at upload. */
+function CombinedPanel({ combined }: { combined: CombinedResult }) {
+  const symptoms = combined.symptoms.length
+    ? combined.symptoms.join(", ")
+    : "none of the 12 listed";
+  return (
+    <section
+      aria-label="CT + age, sex and symptoms"
+      className="rounded-md border border-brand-100 bg-brand-50 p-4"
+    >
+      <h3 className="font-semibold text-slate-800">CT + age, sex and symptoms</h3>
+      <dl className="mt-2 flex flex-wrap gap-8">
+        <div>
+          <dt className="text-xs uppercase text-slate-500">Predicted class</dt>
+          <dd className="text-2xl font-bold text-slate-900">
+            {combined.inconclusive ? "Inconclusive" : combined.predicted_class}
+          </dd>
+          {combined.inconclusive && (
+            <dd className="text-sm text-slate-600">Leans towards {combined.predicted_class}</dd>
+          )}
+        </div>
+        <div>
+          <dt className="text-xs uppercase text-slate-500">Probability of TB</dt>
+          <dd className="text-2xl font-semibold text-slate-900">
+            {combined.probability_tb_pct.toFixed(1)}%
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs uppercase text-slate-500">Confidence</dt>
+          <dd className="text-2xl font-semibold text-slate-900">
+            {combined.confidence_pct.toFixed(1)}%{" "}
+            <span
+              className={`rounded px-2 py-0.5 align-middle text-sm ${BAND_STYLES[combined.band]}`}
+            >
+              {combined.band}
+            </span>
+          </dd>
+        </div>
+      </dl>
+      <p className="mt-3 text-sm text-slate-800">{combined.explanation}</p>
+      <p className="mt-2 text-xs text-slate-600">
+        Combined with age ({combined.age == null ? "unknown" : `${combined.age} years`}),{" "}
+        {SEX(combined.sex)} and the symptoms entered at upload: {symptoms}. Symptom-assisted model{" "}
+        {combined.fusion_version}.
+      </p>
+    </section>
+  );
+}
+
 function ResultBody({ result, caseId }: { result: AiResult; caseId: string }) {
   const performance = result.validated_performance;
   return (
@@ -40,6 +92,7 @@ function ResultBody({ result, caseId }: { result: AiResult; caseId: string }) {
         </div>
       )}
 
+      {result.combined && <h3 className="font-semibold text-slate-800">CT only</h3>}
       <div className="flex flex-wrap items-end gap-8">
         <div>
           <p className="text-xs uppercase text-slate-500">Predicted class</p>
@@ -84,6 +137,11 @@ function ResultBody({ result, caseId }: { result: AiResult; caseId: string }) {
       </div>
 
       <p className="rounded-md bg-slate-50 p-4 text-slate-800">{result.explanation}</p>
+
+      {result.combined && <CombinedPanel combined={result.combined} />}
+      {!result.combined && result.combined_note && (
+        <p className="text-sm text-slate-600">{result.combined_note}</p>
+      )}
 
       {result.warnings.length > 0 && (
         <Alert tone="warning">
