@@ -26,7 +26,8 @@ Final Year Project, Department of Computer Science, Air University Islamabad (20
 | 8 | Training on the real dataset: locked test AUC 0.766 ([evaluation report](docs/EVALUATION_REPORT.md)) | ✅ Done (model-v1) |
 | 9 | The trained model in the application, verified on 10 real scans ([verification](docs/verification/MODEL_VERIFICATION.md)); thesis tables ([docs/tables](docs/tables/TABLES.md)) | ✅ Done (v1.0) |
 | 10 | Heatmap explanation (optional): Grad-CAM overlay in the viewer and the PDF; H4 on the test set (not supported: 33% vs 80%) | ✅ Done (v1.1) |
-| 11–12 | Symptom-assisted prediction (optional) and the final release | Planned |
+| 11 | Symptom-assisted prediction (optional): symptoms at upload, CT-only and combined results; H3 on the test set (not supported: AUC 0.772 vs 0.766, p = 0.80) | Done |
+| 12 | Final release and thesis package | Planned |
 
 ## Documentation
 

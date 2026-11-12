@@ -8,6 +8,7 @@
 |---|---|
 | H1: the CT model separates TB from NTM better than chance | **Supported**. Test AUC 0.766 (95% CI 0.699 to 0.826); supported if the lower bound is above 0.50. Target AUC ≥ 0.75: met. |
 | H2: CT adds information beyond demographics and symptoms | **Supported**. CT AUC 0.766 vs clinical-only AUC 0.678 on the same 259 patients: difference +0.088 (95% CI +0.004 to +0.173), DeLong p = 0.0409; supported if the CT model is better with p < 0.05. |
+| H3: CT plus symptoms is better than CT alone | **Not supported**. Combined AUC 0.772 vs CT-only AUC 0.766 on the same 259 test patients: difference +0.006 (95% CI -0.041 to +0.053), DeLong p = 0.7959; supported if the combined model is better with p < 0.05. |
 | Shortcut check (locked test set) | WARNING: scan metadata alone separates TB from NTM (AUC 0.695, CI lower bound 0.642 > 0.50). The CT model may partly learn scanner differences; report this. |
 | H4: the heatmap falls mostly inside the lungs | **Not supported**. Mean share inside the lung mask 33.0% (95% CI 32.1% to 34.0%) on 259 patients; target ≥ 80%. |
 | Cross-validation (development set) | Pooled out-of-fold AUC 0.716 (0.680 to 0.748) on 1038 patients. |
@@ -124,6 +125,43 @@ Share of Grad-CAM heatmap energy inside the lung mask, for the predicted class, 
 | Mean for TB / NTM patients | 34.4% / 30.3% |
 
 The heatmap shows where the model looked, not where disease is; it is not a lesion marker. Computed with `cavinet-ml heatmap-check` on the frozen model (model-v1); the model's performance was not measured again.
+
+## Symptom-assisted prediction (H3)
+
+A logistic regression combines the CT model's logit with age, sex and the 12 symptoms (FR-12.2). It was fitted on the out-of-fold CT logits of the 1038 development patients and evaluated once on the 259 patients of the locked test set. H3 (combined better than CT alone): **not supported**.
+
+| Measure (locked test set, threshold 0.50) | CT only | CT + symptoms |
+|---|---|---|
+| AUC (95% CI) | 0.766 (0.699 to 0.826) | 0.772 (0.709 to 0.830) |
+| Sensitivity | 0.740 (0.676 to 0.803) | 0.757 (0.688 to 0.821) |
+| Specificity | 0.640 (0.535 to 0.733) | 0.640 (0.535 to 0.744) |
+| Balanced accuracy | 0.690 (0.629 to 0.748) | 0.698 (0.635 to 0.759) |
+| Brier score | 0.189 (0.171 to 0.208) | 0.190 (0.168 to 0.213) |
+
+- Test set: Combined AUC 0.772 vs CT-only AUC 0.766 on the same 259 test patients: difference +0.006 (95% CI -0.041 to +0.053), DeLong p = 0.7959; supported if the combined model is better with p < 0.05.
+- Development set (out-of-fold, for information): Combined AUC 0.767 vs CT-only AUC 0.716 on the same 1038 development patients: difference +0.051 (95% CI +0.027 to +0.075), DeLong p = 0.0000.
+
+Fusion coefficients (inputs standardised for the CT logit and age; positive favours TB):
+
+| Input | Coefficient |
+|---|---|
+| CT model logit | +0.757 |
+| Age | -0.268 |
+| Male sex | +0.366 |
+| Chest pain | +0.183 |
+| Cough | +0.820 |
+| Expectoration | -0.057 |
+| Fever | +0.278 |
+| Chest tightness | +0.009 |
+| Haemoptysis | -0.279 |
+| Gasp | -0.329 |
+| Dyspnoea | -1.050 |
+| Chills | +0.689 |
+| Fatigue | -0.965 |
+| Night sweats | -0.177 |
+| Weight loss | -0.846 |
+
+Computed with `cavinet-ml fusion` from the frozen model's outputs (model-v1); the CT model itself was not evaluated again.
 
 ## Methods
 
