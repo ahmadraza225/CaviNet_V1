@@ -188,8 +188,9 @@ test("doctor's journey: account, patient, upload, result, PDF report, notificati
     await expect(result.getByRole("button", { name: "Download PDF report" })).toBeVisible({
       timeout: 5 * 60_000,
     });
-    await expect(result.getByText("Predicted class")).toBeVisible();
-    await expect(result.getByText("Probability of TB")).toBeVisible();
+    // .first(): the combined result (FR-12.3) repeats these labels.
+    await expect(result.getByText("Predicted class").first()).toBeVisible();
+    await expect(result.getByText("Probability of TB").first()).toBeVisible();
     await expect(result.getByRole("meter", { name: "Probability of TB" })).toBeVisible();
     await expect(
       result.getByText(/Confirm with laboratory testing\.|Inconclusive/).first(),
