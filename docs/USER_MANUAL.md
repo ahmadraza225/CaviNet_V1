@@ -136,7 +136,14 @@ Click **Upload CT** on the patient's page (or on the dashboard, then choose the 
 1. Click **Choose files** (or drag the files onto the page) and select **either**:
    - **one .zip file** containing the scan (any folders inside are fine), **or**
    - **the scan's .dcm files** (select them all).
-2. Click **Upload scan**. A progress bar shows the upload; **Cancel upload** stops it.
+2. **Symptoms (optional).** To also get a result that takes the patient's symptoms into
+   account, tick **Add the patient's symptoms for a symptom-assisted result**, then tick every
+   symptom that is present (chest pain, cough, expectoration, fever, chest tightness,
+   haemoptysis, gasp, dyspnoea, chills, fatigue, night sweats, weight loss). Leaving them all
+   unticked means none is present. Age and sex are taken from the patient record. Leave the
+   box off if you only want the CT result. (The section appears only when the installed AI
+   model has a symptom-assisted version.)
+3. Click **Upload scan**. A progress bar shows the upload; **Cancel upload** stops it.
 
 What CaviNet accepts:
 
@@ -202,6 +209,14 @@ When the case is completed, the **AI result** appears on the case page.
 | **Heatmap** | Tick **Show heatmap** to colour the parts of the slice that most influenced the result (red strongest, then yellow; nothing below 40% of the strongest). **Top slices** jumps to the 3 slices with the most heatmap; they are marked "Top heatmap slice 1, 2, 3". As the label says: *Regions that most influenced the prediction. This is not a lesion marker.* It shows where the model looked, not where disease is. |
 | **Validated performance** | How well this model did on test patients it had never seen: AUC (how well it separates TB from NTM; 0.5 is guessing, 1.0 is perfect), sensitivity (TB cases it called TB) and specificity (NTM cases it called NTM). |
 | **Model** | The model's name, version and training date, and how long the analysis took. |
+
+**With symptoms.** If symptoms were entered at upload, the page shows the CT result under
+**CT only** and a second box, **CT + age, sex and symptoms**, with its own predicted class,
+probability of TB, confidence and explanation. It combines the CT result with the patient's
+age, sex and the ticked symptoms, and lists what it used. The two can disagree: the CT-only
+result is what the scan shows; the combined one also weighs the clinical picture the model
+learned from the training patients. If symptoms were entered but the installed model has no
+symptom-assisted version, a note says that only the CT result is shown.
 
 **How to use the result:** as one piece of information next to the clinical picture and the
 laboratory tests, never on its own. An "Inconclusive" result means the scan does not lean

@@ -190,9 +190,13 @@ jobs:
             $api/patients | field '["id"]')
           docker compose exec -T backend python -m app.synthetic_dicom --slices 60 --size 64 \
             > "$tmp/scan.zip"
-          curl -fsS -H "$auth" -F "files=@$tmp/scan.zip;type=application/zip" \
+          # Phase 11 (M-12): the symptom-assisted model is installed for the released model.
+          curl -fsS -H "$auth" $api/model/status | grep -q '"symptom_assisted":true'
+          curl -fsS -H "$auth" -F 'symptoms=["night_sweats","cough"]' \
+            -F "files=@$tmp/scan.zip;type=application/zip" \
             "$api/patients/$patient/cases" > "$tmp/case.json"
           test "$(field '["status"]' < "$tmp/case.json")" = queued
+          test "$(field '["upload"]["symptoms"]' < "$tmp/case.json")" = "['Cough', 'Night sweats']"
           case_id=$(field '["id"]' < "$tmp/case.json")
           for _ in $(seq 1 120); do
             status=$(curl -fsS -H "$auth" "$api/cases/$case_id" | field '["status"]')
@@ -220,6 +224,15 @@ jobs:
           test "$(field '["heatmap"]["top"].__len__()' < "$tmp/result.json")" = 3
           curl -fsS -H "$auth" -o "$tmp/heatmap.png" "$api/cases/$case_id/heatmaps/24"
           file "$tmp/heatmap.png" | grep -q "PNG image.*RGBA"
+          # Phase 11 (M-12): CT-only and combined results; age and sex from the patient record.
+          test "$(field '["symptoms"]' < "$tmp/result.json")" = "['Cough', 'Night sweats']"
+          test "$(field '["combined"]["sex"]' < "$tmp/result.json")" = female
+          test "$(field '["combined"]["symptoms"]' < "$tmp/result.json")" = \
+            "['Cough', 'Night sweats']"
+          test "$(field '["combined"]["fusion_version"]' < "$tmp/result.json")" = model-v1-fusion
+          python3 -c "import json, sys; r = json.load(sys.stdin); c = r['combined']; \
+            assert c['predicted_class'] in ('TB', 'NTM') and 50 <= c['confidence_pct'] <= 100, c" \
+            < "$tmp/result.json"
           curl -fsS -H "$auth" $api/model/status | grep -q '"is_demo":false'
           curl -fsS -H "$auth" $api/notifications/unread-count | grep -q '"count":1'
           curl -fsS -H "$auth" $api/dashboard/stats | grep -q '"completed_cases":1'

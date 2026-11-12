@@ -8,6 +8,8 @@ export interface ModelStatus {
   model_version: string | null;
   created_at: string | null;
   demo_banner: string | null;
+  /** M-12: symptom-assisted prediction is available for the installed model. */
+  symptom_assisted?: boolean;
 }
 
 export interface TestMetrics {

@@ -3,6 +3,32 @@
 All notable changes to CaviNet are recorded here, one section per phase.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added (Phase 11: symptom-assisted prediction, optional module M-12)
+- **Symptoms at upload** (FR-12.1). The upload page has an optional section: tick the
+  patient's symptoms (the 12 of the dataset). Age and sex come from the patient record. The
+  API takes them as the form field `symptoms` (a JSON list); without it only the CT result is
+  made. New database column `cases.symptoms` (migration 0006).
+- **Fusion model** (FR-12.2). `cavinet-ml fusion` fits a logistic regression on the CT
+  model's out-of-fold logits plus age, sex and symptoms, checks it with the same folds,
+  evaluates it once on the locked test set and compares it with CT alone (DeLong, H3). Its
+  parameters are a small JSON file per model in `ml/cavinet_ml/fusion_params/`;
+  `make fetch-model` installs the one fitted for the installed model next to it
+  (`cavinet_fusion.json`; the demo model gets fixed demo values). Result on the 259 test patients: **H3 not supported: combined test AUC 0.772 vs CT-only 0.766, difference +0.006 (95% CI −0.041 to +0.053), DeLong p = 0.80**. On the development folds the fusion helped (0.767 vs 0.716), but not on the locked test set. Files: `docs/audit/fusion_results.json`, `docs/audit/fusion_test_predictions.csv`.
+- **Both results** (FR-12.3). When symptoms were entered, the result page and the PDF show
+  the CT-only result and the "CT + age, sex and symptoms" result with what it used; the PDF
+  stays one page. Without symptoms nothing changes. A missing or broken fusion file never
+  fails an analysis. `GET /api/model/status` says whether it is available
+  (`symptom_assisted`).
+- Tests: `ml/tests/test_fusion.py`, `backend/tests/test_symptom_fusion.py`,
+  `frontend/src/components/SymptomFusion.test.tsx`; the e2e journey ticks two symptoms; the
+  CI full-stack job checks the combined result with the released model.
+
+### Changed
+- The evaluation report keeps the H3 and H4 sections and their summary rows when it is
+  rewritten; `heatmap-check` now also adds its H4 row to the summary table.
+
 ## [1.1.0] Phase 10: heatmap explanation (v1.1)
 
 ### Added (Phase 10: heatmap explanation, optional module M-11)

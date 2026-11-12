@@ -511,6 +511,24 @@ Run these where `work/` is, from the repository folder, with the training enviro
    Without the dataset on a local computer, run `scripts/kaggle_heatmap_check.py` in a Kaggle
    notebook (GPU and internet on, dataset `damianhan/dicom-dataset` added); it installs
    `cavinet-ml`, downloads model-v1 and runs the same command.
+5. **Symptom-assisted model (Phase 11, H3).** Where `work/` is (no scans and no GPU needed):
+
+   ```bash
+   cavinet-ml fusion
+   ```
+
+   It fits a logistic regression on the CT model's out-of-fold logits plus age, sex and the
+   12 symptoms of the development patients, checks it with the same folds, then evaluates it
+   **once** on the locked test set and compares it with CT alone (DeLong). H3 is supported if
+   the combined AUC is higher with p < 0.05. It needs `oof_predictions.csv`,
+   `manifest.csv`, `evaluation/test_predictions.csv` and `evaluation/test_results.json`
+   from part C. It writes `work/fusion/` (`cavinet_fusion.json`, `fusion_results.json` and
+   the prediction CSVs), adds the "Symptom-assisted prediction (H3)" section to
+   `docs/EVALUATION_REPORT.md` and logs the run in `docs/audit/evaluation_runs.jsonl`; a
+   second run is refused without `--force --reason`. Copy `work/fusion/cavinet_fusion.json`
+   to `ml/cavinet_ml/fusion_params/<model version>-fusion.json` and commit it: `make
+   fetch-model` then installs it next to the model, and the application offers the
+   symptom-assisted result. The file holds only coefficients, no patient data.
 
 ## Troubleshooting
 
