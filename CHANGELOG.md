@@ -3,7 +3,7 @@
 All notable changes to CaviNet are recorded here, one section per phase.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [1.1.0] Phase 10: heatmap explanation (v1.1)
 
 ### Added (Phase 10: heatmap explanation, optional module M-11)
 - **Grad-CAM heatmaps** (FR-11.1). After the prediction, the worker computes Grad-CAM on the
