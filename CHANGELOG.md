@@ -3,6 +3,24 @@
 All notable changes to CaviNet are recorded here, one section per phase.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added (Phase 10: heatmap explanation, optional module M-11)
+- **Grad-CAM heatmaps** (FR-11.1). After the prediction, the worker computes Grad-CAM on the
+  last convolutional block of each of the 5 fold models for the predicted class, averages them
+  and maps the result back onto the 48 preview slices. It adds about 7 s per scan on a 4-core
+  CPU (NFR-1 still met). A heatmap failure never fails the analysis.
+- **Viewer and PDF** (FR-11.2, FR-11.3). The slice viewer has a "Show heatmap" toggle, buttons
+  for the 3 slices with the largest heatmap share (marked on the image), and the label
+  "Regions that most influenced the prediction. This is not a lesion marker." The PDF shows the
+  3 top heatmap slices beside the representative slices and stays one page. API:
+  `heatmap` on the result and `GET /api/cases/{id}/heatmaps/{index}`.
+- **H4 check** (FR-11.4). `cavinet-ml heatmap-check` measures the share of heatmap energy inside
+  the lung mask on the locked test set and adds the "Heatmap explanation (H4)" section to the
+  evaluation report. Result on the 259 test patients: mean 33.0% (95% CI 32.1% to 34.0%),
+  target 80%, so **H4 is not supported**. Files: `docs/audit/heatmap_check.json` and
+  `docs/audit/heatmap_shares.csv`.
+
 ## [1.0.0] Phases 08 and 09: the trained model, in the application (v1.0)
 
 ### Added (Phase 9: the trained model in the application)

@@ -9,6 +9,7 @@
 | H1: the CT model separates TB from NTM better than chance | **Supported**. Test AUC 0.766 (95% CI 0.699 to 0.826); supported if the lower bound is above 0.50. Target AUC ≥ 0.75: met. |
 | H2: CT adds information beyond demographics and symptoms | **Supported**. CT AUC 0.766 vs clinical-only AUC 0.678 on the same 259 patients: difference +0.088 (95% CI +0.004 to +0.173), DeLong p = 0.0409; supported if the CT model is better with p < 0.05. |
 | Shortcut check (locked test set) | WARNING: scan metadata alone separates TB from NTM (AUC 0.695, CI lower bound 0.642 > 0.50). The CT model may partly learn scanner differences; report this. |
+| H4: the heatmap falls mostly inside the lungs | **Not supported**. Mean share inside the lung mask 33.0% (95% CI 32.1% to 34.0%) on 259 patients; target ≥ 80%. |
 | Cross-validation (development set) | Pooled out-of-fold AUC 0.716 (0.680 to 0.748) on 1038 patients. |
 
 ## Data
@@ -110,6 +111,19 @@ WARNING: scan metadata alone separates TB from NTM (AUC 0.695, CI lower bound 0.
 ![Predicted probabilities, locked test set](figures/scores_test.png)
 
 ![Subgroup AUCs, locked test set](figures/subgroups_test.png)
+
+## Heatmap explanation (H4)
+
+Share of Grad-CAM heatmap energy inside the lung mask, for the predicted class, on 259 patients of the locked test set (FR-11.4). H4 (target ≥ 80%): **not supported**.
+
+| Measure | Value |
+|---|---|
+| Mean share inside the lungs (95% CI) | 33.0% (32.1% to 34.0%) |
+| Median / lowest | 34.1% / 11.9% |
+| Patients at or above 80% | 0 of 259 |
+| Mean for TB / NTM patients | 34.4% / 30.3% |
+
+The heatmap shows where the model looked, not where disease is; it is not a lesion marker. Computed with `cavinet-ml heatmap-check` on the frozen model (model-v1); the model's performance was not measured again.
 
 ## Methods
 

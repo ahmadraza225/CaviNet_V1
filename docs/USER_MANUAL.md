@@ -199,6 +199,7 @@ When the case is completed, the **AI result** appears on the case page.
 | **Explanation** | The result in one sentence, e.g. "The scan pattern is more consistent with TB (confidence: High, 86.0%). Confirm with laboratory testing." |
 | **Warnings** | Anything unusual in the analysis, e.g. that the lungs could not be outlined and the whole body outline was used. Treat such a result with extra care. |
 | **Slice viewer** | 48 slices through the lungs, from head to feet. Drag the slider or use **Up** and **Down**. |
+| **Heatmap** | Tick **Show heatmap** to colour the parts of the slice that most influenced the result (red strongest, then yellow; nothing below 40% of the strongest). **Top slices** jumps to the 3 slices with the most heatmap; they are marked "Top heatmap slice 1, 2, 3". As the label says: *Regions that most influenced the prediction. This is not a lesion marker.* It shows where the model looked, not where disease is. |
 | **Validated performance** | How well this model did on test patients it had never seen: AUC (how well it separates TB from NTM; 0.5 is guessing, 1.0 is perfect), sensitivity (TB cases it called TB) and specificity (NTM cases it called NTM). |
 | **Model** | The model's name, version and training date, and how long the analysis took. |
 
@@ -219,7 +220,8 @@ The one-page report contains:
 - the patient's **name, MR number, age** (at the scan) and **sex**;
 - the **scan details** (study date, slices, slice thickness, pixel spacing, scanner, kernel);
 - the **result, probability of TB, confidence and band**, with the explanation;
-- **three representative slices** (upper, middle and lower lungs);
+- **three representative slices** (upper, middle and lower lungs) and, beside them, the **3 top
+  heatmap slices** with the heatmap label;
 - the **model version** and its **validated performance**;
 - the **disclaimer**, and a **signature line** for the reviewing doctor.
 
@@ -331,3 +333,4 @@ When the trained model is installed, the red DEMO banner disappears everywhere.
 | Confidence band | High, Moderate or Low (Inconclusive): how sure the model is. |
 | AUC | A score from 0.5 (guessing) to 1.0 (perfect) of how well the model separates TB from NTM. |
 | Demo model | A practice model trained on synthetic scans; its results mean nothing for real patients. |
+| Heatmap | Colours showing which regions of the scan most influenced the model's result (Grad-CAM). Not a lesion marker. |

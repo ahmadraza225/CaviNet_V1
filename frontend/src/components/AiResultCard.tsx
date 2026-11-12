@@ -100,7 +100,11 @@ function ResultBody({ result, caseId }: { result: AiResult; caseId: string }) {
         <div>
           <h3 className="font-semibold text-slate-800">Slice viewer</h3>
           <div className="mt-3">
-            <SliceViewer caseId={caseId} count={result.preview_count} />
+            <SliceViewer
+              caseId={caseId}
+              count={result.preview_count}
+              heatmap={result.heatmap ?? null}
+            />
           </div>
         </div>
         <div className="space-y-5">

@@ -496,6 +496,21 @@ Run these where `work/` is, from the repository folder, with the training enviro
    each scan through the application, compares its probability of TB with the toolkit's
    (they must agree within 0.01), times each analysis and writes
    `docs/verification/MODEL_VERIFICATION.md`. Commit that folder.
+4. **Heatmap check (Phase 10, H4).** On a computer with the dataset (a GPU makes it about
+   10 times faster):
+
+   ```bash
+   cavinet-ml heatmap-check --data <dataset zip or folder> --bundle <cavinet_model.pth> --device cuda
+   ```
+
+   For every locked-test patient it prepares the scan as the application does and measures how
+   much of the model's heatmap falls inside the lungs. H4 is supported if the average is at
+   least 80%. It writes `work/evaluation/heatmap_shares.csv` and `heatmap_check.json` and adds
+   the "Heatmap explanation (H4)" section to `docs/EVALUATION_REPORT.md`. It can be stopped and
+   resumed. It does not measure the model's accuracy again, so the "test set once" rule holds.
+   Without the dataset on a local computer, run `scripts/kaggle_heatmap_check.py` in a Kaggle
+   notebook (GPU and internet on, dataset `damianhan/dicom-dataset` added); it installs
+   `cavinet-ml`, downloads model-v1 and runs the same command.
 
 ## Troubleshooting
 
