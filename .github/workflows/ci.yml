@@ -31,6 +31,8 @@ jobs:
           pytest -q scripts/tests
       - name: Traceability table (every core FR has a test, every listed test exists)
         run: python scripts/check_traceability.py
+      - name: Thesis pack (diagrams exported, H1-H5 stated, links valid)
+        run: python scripts/check_thesis.py
 
   frontend:
     name: Frontend (eslint + vitest + build)

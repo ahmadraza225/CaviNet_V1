@@ -3,7 +3,21 @@
 All notable changes to CaviNet are recorded here, one section per phase.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [1.2.0] Phases 11 and 12: symptom-assisted prediction and final release (v1.2-final)
+
+### Added (Phase 12: final release and thesis package)
+- **Thesis pack** in `docs/thesis/`: architecture, module, database and analysis-sequence
+  diagrams (Mermaid sources and PNG exports), the H1–H5 outcome table with evidence links,
+  the methods write-up of the AI pipeline and the limitations.
+- **Viva demo script** (`docs/VIVA_DEMO_SCRIPT.md`): preparation, expected results on two real
+  verification scans, the demo steps and a fallback for each failure.
+- `scripts/check_thesis.py` (run in CI): every diagram exported, H1–H5 each with an outcome,
+  every link in the pack valid.
+
+### Changed (Phase 12)
+- Version 1.2.0 in every package (the PDF footer showed 1.0.0); README lists the evaluation
+  report, the thesis pack and the viva script, and describes the heatmap and symptoms.
+
 
 ### Added (Phase 11: symptom-assisted prediction, optional module M-12)
 - **Symptoms at upload** (FR-12.1). The upload page has an optional section: tick the

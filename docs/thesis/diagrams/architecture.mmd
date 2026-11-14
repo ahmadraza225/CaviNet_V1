@@ -1,0 +1,11 @@
+flowchart LR
+  B["Doctor / admin<br/>web browser"] -->|HTTP, port 8080| F["frontend<br/>nginx + React app"]
+  F -->|/api| A["backend<br/>FastAPI"]
+  A --> P[("postgres<br/>users, patients, cases, audit")]
+  A -->|enqueue job| R[("redis<br/>job queue")]
+  R --> W["worker<br/>RQ + cavinet-ml"]
+  W --> P
+  W --> D[("app_data volume<br/>de-identified DICOM,<br/>previews, heatmaps")]
+  A --> D
+  W --> M[("/models<br/>cavinet_model.pth<br/>cavinet_fusion.json")]
+  A -.->|metadata only| M
