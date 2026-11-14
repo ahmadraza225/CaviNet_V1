@@ -1,0 +1,39 @@
+erDiagram
+  users ||--o{ refresh_tokens : "signs in with"
+  users ||--o{ patients : "created_by"
+  users ||--o{ cases : "uploaded_by"
+  users ||--o{ notifications : receives
+  users ||--o{ audit_logs : "actor of"
+  patients ||--o{ cases : has
+  cases ||--o{ case_events : "timeline"
+  cases ||--o{ notifications : "about"
+  users { uuid id PK
+    string email
+    string role
+    string password_hash }
+  patients { uuid id PK
+    string full_name
+    string mr_number
+    date date_of_birth
+    string sex }
+  cases { uuid id PK
+    uuid patient_id FK
+    string status
+    json symptoms
+    string result_label
+    float probability_tb
+    string confidence_band
+    json result_details }
+  case_events { int id PK
+    uuid case_id FK
+    string status
+    text message }
+  notifications { int id PK
+    uuid user_id FK
+    uuid case_id FK }
+  audit_logs { int id PK
+    uuid user_id FK
+    string action
+    json details }
+  refresh_tokens { uuid id PK
+    uuid user_id FK }

@@ -1,0 +1,23 @@
+sequenceDiagram
+  actor Doc as Doctor
+  participant UI as Frontend
+  participant API as Backend API
+  participant Q as Redis queue
+  participant W as Worker
+  participant DB as PostgreSQL
+  Doc->>UI: choose scan (+ optional symptoms), Upload
+  UI->>API: POST /api/patients/{id}/cases (multipart, streamed)
+  API->>API: validate DICOM, pick series, de-identify
+  API->>DB: case Uploaded → Validating → Queued
+  API->>Q: enqueue analysis
+  API-->>UI: 201 case (queued)
+  Q->>W: analyse_case(id)
+  W->>DB: Preprocessing
+  W->>W: lung mask, resample 1.5 mm, crop, 128³
+  W->>DB: Analysing
+  W->>W: 5-fold ensemble → logit → temperature → p(TB)
+  W->>W: Grad-CAM heatmaps, then fusion with age, sex, symptoms
+  W->>DB: result, Completed, notification
+  UI->>API: GET /api/cases/{id}/result
+  API-->>UI: CT-only (+ combined) result, previews, heatmaps
+  Doc->>UI: Download PDF report

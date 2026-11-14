@@ -1,0 +1,13 @@
+flowchart TB
+  subgraph App["CaviNet application (core M-01 to M-10, optional M-11, M-12)"]
+    M01["M-01 Authentication"] --- M02["M-02 Users and roles"]
+    M03["M-03 Patients"] --> M04["M-04 CT upload and de-identification"]
+    M04 --> M05["M-05 AI inference"]
+    M05 --> M06["M-06 Results and slice viewer"]
+    M06 --> M07["M-07 PDF report"]
+    M05 --> M08["M-08 Case timeline and notifications"]
+    M09["M-09 Admin: audit log, model page"]
+    M05 --> M11["M-11 Heatmap (optional)"]
+    M05 --> M12["M-12 Symptom-assisted result (optional)"]
+  end
+  M10["M-10 Training and evaluation toolkit (cavinet-ml)"] -->|model bundle + fusion file| M05

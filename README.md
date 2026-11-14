@@ -5,7 +5,8 @@ non-tuberculous mycobacterial (NTM) lung disease on chest CT.**
 
 A doctor uploads a patient's chest CT scan and CaviNet reports whether it looks more like
 **TB** or **NTM**, with a calibrated confidence score and a PDF report. The AI model is a 3D
-convolutional neural network trained on 1,301 public chest CT scans.
+convolutional neural network trained on 1,301 public chest CT scans. Optional extras: a heatmap of where the model
+looked, and a second result that also uses the patient's age, sex and symptoms.
 
 Final Year Project, Department of Computer Science, Air University Islamabad (2025–2027).
 
@@ -26,8 +27,11 @@ Final Year Project, Department of Computer Science, Air University Islamabad (20
 | 8 | Training on the real dataset: locked test AUC 0.766 ([evaluation report](docs/EVALUATION_REPORT.md)) | ✅ Done (model-v1) |
 | 9 | The trained model in the application, verified on 10 real scans ([verification](docs/verification/MODEL_VERIFICATION.md)); thesis tables ([docs/tables](docs/tables/TABLES.md)) | ✅ Done (v1.0) |
 | 10 | Heatmap explanation (optional): Grad-CAM overlay in the viewer and the PDF; H4 on the test set (not supported: 33% vs 80%) | ✅ Done (v1.1) |
-| 11 | Symptom-assisted prediction (optional): symptoms at upload, CT-only and combined results; H3 on the test set (not supported: AUC 0.772 vs 0.766, p = 0.80) | Done |
-| 12 | Final release and thesis package | Planned |
+| 11 | Symptom-assisted prediction (optional): symptoms at upload, CT-only and combined results; H3 on the test set (not supported: AUC 0.772 vs 0.766, p = 0.80) | ✅ Done (v1.2) |
+| 12 | Final release and thesis package ([docs/thesis](docs/thesis/README.md), [viva demo script](docs/VIVA_DEMO_SCRIPT.md)) | ✅ Done (v1.2-final) |
+
+**Hypotheses:** H1, H2 and H5 supported; H3 and H4 (optional) not supported. Details and
+evidence: [docs/thesis/HYPOTHESES.md](docs/thesis/HYPOTHESES.md).
 
 ## Documentation
 
@@ -38,6 +42,9 @@ Final Year Project, Department of Computer Science, Air University Islamabad (20
 | [Developer guide](docs/DEVELOPER_GUIDE.md) | Architecture, tests and conventions for changing the code |
 | [Training runbook](docs/TRAINING_RUNBOOK.md) | Training and evaluating the model on a GPU computer |
 | [Traceability](docs/TRACEABILITY.md) | Every requirement mapped to its code and tests |
+| [Evaluation report](docs/EVALUATION_REPORT.md) | Every result on the development folds and the locked test set |
+| [Thesis pack](docs/thesis/README.md) | Diagrams, hypotheses H1–H5, methods and limitations for the thesis |
+| [Viva demo script](docs/VIVA_DEMO_SCRIPT.md) | The step-by-step demo, expected results and what to do if something fails |
 | [Changelog](CHANGELOG.md) | What changed in each version |
 
 The full plan, requirements and phase prompts are in the scope document:
@@ -94,14 +101,16 @@ If you cloned without `--recurse-submodules`, `make up` fetches `backend/` and `
    `synthetic_chest_ct.zip`, which is accepted, and `synthetic_too_few_slices.zip`, which is
    refused with the reason shown.
 2. Sign in as the demo doctor, add a made-up patient, then click **Upload CT** (on the
-   dashboard or the patient's page) and choose the file.
+   dashboard or the patient's page) and choose the file. Optionally tick **Add the patient's
+   symptoms** and the symptoms present.
 3. The case page shows the status timeline while the AI pipeline runs (about a minute for the
    synthetic scan). It then shows the result:
    - TB or NTM, the probability of TB, and the confidence with its band (High, Moderate, or Low
      = Inconclusive);
    - an explanation in plain language and the disclaimer;
    - the model's validated performance;
-   - a slice viewer;
+   - with symptoms entered, a second result: **CT + age, sex and symptoms**;
+   - a slice viewer, with **Show heatmap** and the 3 top heatmap slices;
    - **Download PDF report**: a one-page report to print and sign.
 
    The bell in the header shows the notification, and the dashboard counts update.
